@@ -1,0 +1,26 @@
+[
+	{
+		"Name": "1",
+		"MaterialName": "gsgsREDdg",
+		"FatherName": "Blanco_Lacado",
+		"TextureNames": "",
+		"ScalarParamValues": "FresnelIOR=1.6;Reflection_Glossiness=1.0",
+		"VectorParamValues": "Diffuse=(R=0.501961,G=0.000000,B=0.000000,A=1.000000); Reflection=(R=0.000000,G=0.000000,B=0.000000,A=1.000000)"
+	},
+	{
+		"Name": "2",
+		"MaterialName": "Corona",
+		"FatherName": "8g",
+		"TextureNames": "Bump_Map=014_031_wood_bump_2_2_Tex;Diffuse= 014_031_wood_2_2_Tex;Reflection=014_031_wood_bump_2_2_Tex",
+		"ScalarParamValues": "FresnelIOR=1.6;Normal_Intensity=0.05;Reflection_Glossiness=0.75",
+		"VectorParamValues": ""
+	},
+	{
+		"Name": "3",
+		"MaterialName": "Goma_Junta__1_",
+		"FatherName": "Blanco_Lacado",
+		"TextureNames": "",
+		"ScalarParamValues": "FresnelIOR=1.6;Reflection_Glossiness=0.5",
+		"VectorParamValues": "Diffuse=(R=0.000000,G=0.000000,B=0.000000,A=1.000000); Reflection=(R=0.807843,G=0.807843,B=0.807843,A=1.000000)"
+	}
+]
