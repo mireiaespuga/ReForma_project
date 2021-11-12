@@ -169,10 +169,8 @@ void SMatTabPanel::SetCSVPath(const FString& Directory) {
 }
 
 FReply SMatTabPanel::OnGenerateCSV() {
-    //MatComparer.MaxMatsTable->OnDataTableChanged().AddLambda([](){
-    //    GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, );
-    //    });
-    //
+    
+    SMatTabPanel::LoadData();
     EAppReturnType::Type ReturnType = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("(WIP) This action will reset the MaxMats table with no material matches. \n To save table changes export MaxMats table as a CSV. \n\n Do you want to continue?")));
     if (ReturnType == EAppReturnType::Yes)
     {
@@ -184,6 +182,7 @@ FReply SMatTabPanel::OnGenerateCSV() {
 
 FReply SMatTabPanel::OnChangeMat()
 {   
+    SMatTabPanel::LoadData();
     EAppReturnType::Type ReturnType = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Are you sure you want to swap all scene materials?")));
     if (ReturnType == EAppReturnType::Yes)
     {
@@ -232,7 +231,7 @@ bool SMatTabPanel::CanChangeMat() const
     {
         SetupAssetRegistryCallbacks();
         BuildBasicMaterialTree();
-    }*/
+    }*/    
 
     return SMatTabPanel::isSceneFolderValid;
 }
@@ -256,9 +255,11 @@ void SMatTabPanel::SetCurrentFolderPath(const FString& Directory) {
         FString GeometriesFullPath = FPaths::ConvertRelativePathToFull(SMatTabPanel::GetInitialPath() + RightStr + "/Geometries");
         FString MaterialsFullPath = FPaths::ConvertRelativePathToFull(SMatTabPanel::GetInitialPath() + RightStr + "/Materials");
         if (PlatformFile.DirectoryExists(*GeometriesFullPath) && PlatformFile.DirectoryExists(*MaterialsFullPath)) {
-            SMatTabPanel::sceneFolderName = RightStr;
+            SMatTabPanel::sceneFolderName = RightStr;   
             SMatTabPanel::LoadData();
             SMatTabPanel::isSceneFolderValid = true;
+            //UGameInstance* GameInstanceRef = Cast<UGameInstance >(GEngine->GetWorld()->GetGameInstance());
+
         }
         else {
             const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(TEXT("Wrong Folder")));

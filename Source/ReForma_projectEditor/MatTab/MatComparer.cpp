@@ -337,12 +337,13 @@ void FMatComparer::GenerateCSVwMaxMaterials(const FString SavePath, TArray<UMate
     FFileHelper::SaveStringToFile(CSV, *FilePath, FFileHelper::EEncodingOptions::AutoDetect, &IFileManager::Get());// , EFileWrite::FILEWRITE_AllowRead);
     UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
 
-    if (!PlatformFile.FileExists(*FPaths::ConvertRelativePathToFull(*FilePath))) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("shit"));
+    if (!PlatformFile.FileExists(*FPaths::ConvertRelativePathToFull(*FilePath))) { //If file that was created doesn't exist
+        const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(TEXT("Something went wrong... CSV couldn't be created.")));
+    } 
     
     UETable->CreateTableFromCSVString(CSV);
     FMatComparer::MaxMatsTable = UETable;
     //FFileHelper::SaveStringToFile(SaveText, *(FPaths::GameDir() + OutFile), EEncodingOptions::AutoDetect, &IFileManager::Get(), FILEWRITE_Append);
-    
     
     
 }
