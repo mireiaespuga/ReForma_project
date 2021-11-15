@@ -3,7 +3,6 @@
 #include "Widgets/Docking/SDockableTab.h"
 #include "Widgets/Docking/SDockTabStack.h"
 #include "DesktopWidgets/Public/Widgets/Input/SDirectoryPicker.h"
-//#include "DesktopPlatformModule.h"
 #include "Framework/Application/SlateApplication.h"
 #include "MatTab.h"
 #include "MatComparer.h"
@@ -11,6 +10,18 @@
 #include "Containers/Map.h"
 #include "CoreMinimal.h"
 #include "EngineMinimal.h"
+#include "Widgets/Views/SListView.h"
+
+struct FMatItem
+{
+    FString ObjectPath;
+    TSharedPtr<class FAssetThumbnail> Thumbnail;
+
+    FMatItem(const FString& InObjectPath, const TSharedPtr<class FAssetThumbnail>& InThumbnail)
+        : ObjectPath(InObjectPath)
+        , Thumbnail(InThumbnail)
+    {}
+};
 
 
 class SMatTabPanel : public SCompoundWidget
@@ -18,6 +29,7 @@ class SMatTabPanel : public SCompoundWidget
     SLATE_BEGIN_ARGS(SMatTabPanel)
     {}
     SLATE_ARGUMENT(TWeakPtr<class MatTab>, Tool)
+    
         SLATE_END_ARGS()
 
         void Construct(const FArguments& InArgs);
@@ -32,13 +44,33 @@ class SMatTabPanel : public SCompoundWidget
         FString GetMaterialsPath();
         FString GetUnrealLibraryPath();
         void LoadData();
-        
+
+        FReply ButtonPressed();
+
+        /* Adds a new textbox with the string to the list */
+        TSharedRef<ITableRow> OnGenerateRowForList(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable);
+
+
+
+
 public: 
     FString sceneFolderName;
     FString CSVsavePath;
     FString MaxMatsTablePath = "DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'";
     bool isSceneFolderValid = false;
     bool isCSVPathValid = false;
+    
+    /* The list of strings */
+    TArray<TSharedPtr<FMatItem>> Items;
+
+    /* The actual UI list */
+    TSharedPtr<SListView<TSharedPtr<FMatItem>>> ListViewWidget;
+    TSharedPtr<class FAssetThumbnailPool> ThumbnailPool = MakeShareable(
+        new FAssetThumbnailPool(
+            25,
+            false
+        )
+    );
 
 protected:
 

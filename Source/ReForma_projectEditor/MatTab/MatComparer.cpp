@@ -402,9 +402,10 @@ FString FMatComparer::MaxMatToFTableMat(UMaterialInterface* maxmat, int it) {
 
 #undef LOCTEXT_NAMESPACE
 
+
 /*UDataTable* UETable = (FMatComparer::GetDataTables(TablePath).FilterByPredicate([](UDataTable* asset) {
         return asset->GetFName().ToString().Contains(TEXT("MaxMats"));
-        }).Pop());*/
+        }).Pop());
         //UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
         //UETable->RowStruct = FTableMaterial::StaticStruct();
         //if (!UETable ||!UETable->GetRowStruct()->IsChildOf(FTableMaterial::StaticStruct())){
@@ -425,3 +426,4 @@ FString FMatComparer::MaxMatToFTableMat(UMaterialInterface* maxmat, int it) {
 
         //FString ContextString;
         //FTableMaterial* data = UETable->FindRow<FTableMaterial>(NewName, ContextString);
+*/
