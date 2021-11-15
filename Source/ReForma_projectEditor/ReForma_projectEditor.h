@@ -29,13 +29,15 @@ public:
 
     void AddMenuExtension(const FMenuExtensionDelegate& extensionDelegate, FName extensionHook, const TSharedPtr<FUICommandList>& CommandList = NULL, EExtensionHook::Position position = EExtensionHook::Before);
     TSharedRef<FWorkspaceItem> GetMenuRoot() { return MenuRoot; };
-
+    FString GetFolderName() { return sceneFolderName; };
+    void setFolderName(FString name) { sceneFolderName = name; };
 
 protected:
     TSharedPtr<FExtensibilityManager> LevelEditorMenuExtensibilityManager;
     TSharedPtr<FExtender> MenuExtender;
 
     static TSharedRef<FWorkspaceItem> MenuRoot;
+    FString sceneFolderName = "NONE_folderNoValid";
 
     void MakePulldownMenu(FMenuBarBuilder& menuBuilder);
     void FillPulldownMenu(FMenuBuilder& menuBuilder);
