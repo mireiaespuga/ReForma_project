@@ -63,7 +63,7 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
                         [
                              SNew(SDirectoryPicker)
                             .Message(FText::FromString("Choose Datasmith Scene folder"))
-                            .Directory(SMatTabPanel::GetInitialPath())
+                            .Directory(SMatTabPanel::GetFolderPath())
                             .OnDirectoryChanged(this, &SMatTabPanel::SetCurrentFolderPath)
                         ]
                     ]
@@ -203,12 +203,16 @@ FString SMatTabPanel::GetInitialPath() {
     return FPaths::ProjectContentDir() + "Datasmith/";
 }
 
+FString SMatTabPanel::GetFolderPath() {
+    return  SMatTabPanel::isSceneFolderValid() ? SMatTabPanel::GetInitialPath() + FReForma_projectEditor::Get().GetFolderName() : SMatTabPanel::GetInitialPath();
+}
+
 FString SMatTabPanel::GetGeometriesPath() {
-    return "/Game/Datasmith/" + SMatTabPanel::sceneFolderName + "/Geometries";
+    return "/Game/Datasmith/" + FReForma_projectEditor::Get().GetFolderName() + "/Geometries";
 }
 
 FString SMatTabPanel::GetMaterialsPath() {
-    return "/Game/Datasmith/" + SMatTabPanel::sceneFolderName + "/Materials";
+    return "/Game/Datasmith/" + FReForma_projectEditor::Get().GetFolderName() + "/Materials";
 }
 
 FString SMatTabPanel::GetUnrealLibraryPath() {
@@ -216,7 +220,11 @@ FString SMatTabPanel::GetUnrealLibraryPath() {
 }
 
 bool SMatTabPanel::CanGenerateCSV() const {
-    return SMatTabPanel::isSceneFolderValid && SMatTabPanel::isCSVPathValid;
+    return SMatTabPanel::isSceneFolderValid() && SMatTabPanel::isCSVPathValid;
+}
+
+bool SMatTabPanel::isSceneFolderValid() const {
+    return FReForma_projectEditor::Get().GetFolderName() != "NONE_folderNoValid";
 }
 
 bool SMatTabPanel::CanChangeMat() const
@@ -233,7 +241,7 @@ bool SMatTabPanel::CanChangeMat() const
         BuildBasicMaterialTree();
     }*/    
 
-    return SMatTabPanel::isSceneFolderValid;
+    return SMatTabPanel::isSceneFolderValid();
 }
 
 void SMatTabPanel::LoadData() {
@@ -247,6 +255,7 @@ void SMatTabPanel::LoadData() {
 void SMatTabPanel::SetCurrentFolderPath(const FString& Directory) {
     
     IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+  
     if (PlatformFile.DirectoryExists(*Directory) && Directory != FPaths::ConvertRelativePathToFull(SMatTabPanel::GetInitialPath()))
     {
         FString RightStr;
@@ -255,15 +264,11 @@ void SMatTabPanel::SetCurrentFolderPath(const FString& Directory) {
         FString GeometriesFullPath = FPaths::ConvertRelativePathToFull(SMatTabPanel::GetInitialPath() + RightStr + "/Geometries");
         FString MaterialsFullPath = FPaths::ConvertRelativePathToFull(SMatTabPanel::GetInitialPath() + RightStr + "/Materials");
         if (PlatformFile.DirectoryExists(*GeometriesFullPath) && PlatformFile.DirectoryExists(*MaterialsFullPath)) {
-            SMatTabPanel::sceneFolderName = RightStr;   
+            FReForma_projectEditor::Get().setFolderName(RightStr);
             SMatTabPanel::LoadData();
-            SMatTabPanel::isSceneFolderValid = true;
-            //UGameInstance* GameInstanceRef = Cast<UGameInstance >(GEngine->GetWorld()->GetGameInstance());
-
         }
         else {
             const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(TEXT("Wrong Folder")));
-            SMatTabPanel::isSceneFolderValid = false;
         }
     }
 }

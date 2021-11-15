@@ -28,16 +28,18 @@ class SMatTabPanel : public SCompoundWidget
         void SetCurrentFolderPath(const FString& Directory);
         void SetCSVPath(const FString& Directory);
         FString GetInitialPath();
+        FString GetFolderPath();
         FString GetGeometriesPath();
         FString GetMaterialsPath();
         FString GetUnrealLibraryPath();
         void LoadData();
+        bool isSceneFolderValid() const;
         
 public: 
-    FString sceneFolderName;
+    
     FString CSVsavePath;
     FString MaxMatsTablePath = "DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'";
-    bool isSceneFolderValid = false;
+
     bool isCSVPathValid = false;
 
 protected:
