@@ -397,7 +397,7 @@ FString FMatComparer::MaxMatToFTableMat(UMaterialInterface* maxmat, int it) {
     }
 
     //FTableMaterial* tablemat = new FTableMaterial(materialname, fathername, texparams, scalarparams, vecparams);
-    return (FString::FromInt(it) + "," + materialname + "," + " "  + "," + fathername + "," + texparams + "," + scalarparams + "," + vecparams + "\n");
+    return (FString::FromInt(it) + "," + materialname + "," + ""  + "," + fathername + "," + texparams + "," + scalarparams + "," + vecparams + "\n");
 }
 
 #undef LOCTEXT_NAMESPACE
