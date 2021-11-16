@@ -166,15 +166,11 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
                     SNew(SBorder)
                     .BorderBackgroundColor(FColor(192, 192, 192, 255))
                     .Padding(15.0f)
-                    [
-                        SNew(STextBlock)
-                        .Text(FText::FromString(TEXT("Material Wizard")))
-                    ]
-                    [
+                   /* [
                        SNew(SButton)
                        .Text(FText::FromString("Add new list item"))
                        .OnClicked(this, &SMatTabPanel::ButtonPressed)
-                   ]
+                    ]*/
                     [
                         SAssignNew(ListViewWidget, SListView<TSharedPtr<FMatItem>>)
                         .ItemHeight(24)
@@ -183,15 +179,6 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
                     ]
                 ]
                    
-        ];
-}
-
-TSharedRef<ITableRow> MakeListViewWidget(TSharedRef<FText> Item, const TSharedRef<STableViewBase>& OwnerTable)
-{
-    return
-        SNew(STableRow< TSharedRef<FText> >, OwnerTable)
-        [
-            SNew(STextBlock).Text(Item.Get())
         ];
 }
 
@@ -353,8 +340,7 @@ bool SMatTabPanel::CanChangeMat() const
     {
         SetupAssetRegistryCallbacks();
         BuildBasicMaterialTree();
-    }*/    
-
+    }*/   
     return SMatTabPanel::isSceneFolderValid();
 }
 
@@ -390,12 +376,17 @@ void SMatTabPanel::SetCurrentFolderPath(const FString& Directory) {
 
 FReply SMatTabPanel::ButtonPressed()
 {
+    SMatTabPanel::LoadData();
+    Items.Empty();
+
     for (auto uetablemat : MatComparer.UnrealMats) {
         //Adds a new item to the array (do whatever you want with this)
-        //FString* str = new FString(utabmat->MaterialName.ToString() + "    with    " + (utabmat->UMaterialMatch.ToString()));
-  
+
         TArray<UMaterialInterface*> assetmat = MatComparer.AssetMats.FilterByPredicate([&](const UMaterialInterface* assetMat) {
             return assetMat->GetFName() == uetablemat->MaterialName;
+            });
+        TArray<UMaterialInterface*> matchedmat = MatComparer.RealUnrealMats.FilterByPredicate([&](const UMaterialInterface* ulibMat) {
+            return ulibMat->GetFName() == uetablemat->UMaterialMatch;
             });
 
         if (assetmat.Num() > 0) {
@@ -403,19 +394,28 @@ FReply SMatTabPanel::ButtonPressed()
             UMaterialInterface* mat = assetmat.Pop();
 
            /* UTexture2D* CurrentObject = mat.tex*/
-            FAssetData AssetData = FAssetData(mat);
+            FAssetData AssetData = FAssetData(mat);  
             const uint32 ThumbnailResolution = 64;
             TSharedPtr<FAssetThumbnail> Thumbnail = MakeShareable(new FAssetThumbnail(AssetData, ThumbnailResolution, ThumbnailResolution, ThumbnailPool));
-            TSharedPtr<FMatItem> NewItem = MakeShareable(new FMatItem(mat->GetPathName(), Thumbnail));
-        
-            Items.Add(NewItem);
-
-           // Update the listview
-            ListViewWidget->RequestListRefresh();
+            
+            if (matchedmat.Num() > 0) {
+                UMaterialInterface* matchmat = matchedmat.Pop();
+                FAssetData MatchedAssetData = FAssetData(matchmat);
+                TSharedPtr<FAssetThumbnail> matchedThumbnail = MakeShareable(new FAssetThumbnail(MatchedAssetData, ThumbnailResolution, ThumbnailResolution, ThumbnailPool));
+                
+                TSharedPtr<FMatItem> NewItem = MakeShareable(new FMatItem(mat->GetPathName(), Thumbnail, matchmat->GetPathName(), matchedThumbnail, true));
+                Items.Add(NewItem);
+            }
+            else {
+                //TODO: try showing suggestions when no match is found!
+            }
+            
         } 
 
     }
  
+    // Update the listview
+    ListViewWidget->RequestListRefresh();
 
     return FReply::Handled();
 }
@@ -431,71 +431,131 @@ TSharedRef<ITableRow> SMatTabPanel::OnGenerateRowForList(TSharedPtr<FMatItem> It
     const uint32 ThumbnailBoxPadding = 4;
     UObject* ListObject = FindObject<UObject>(NULL, *Item->ObjectPath);
     FAssetData ListAssetData(ListObject);
+    
+    UObject* MatchedListObject = FindObject<UObject>(NULL, *Item->MatchObjectPath);
+    FAssetData MatchedListAssetData(MatchedListObject);
 
     FAssetThumbnailConfig ThumbnailConfig;
     ThumbnailConfig.bAllowFadeIn = true;
-    //Create the row
-    //FString str = *Item.Get()->MaterialName.ToString().Append(*Item.Get()->UMaterialMatch.ToString());
-    //return
-    //    SNew(STableRow< TSharedPtr<FString>>, OwnerTable)
-    //    .Padding(2.0f)
-    //    [
-    //        SNew(STextBlock)
-    //        .Text(FText::FromString(*str))
-    //    ]; //TODO: THUMBNAIL???????
 
     return SNew(STableRow<TSharedPtr<FMatItem>>, OwnerTable)
             .Style(FEditorStyle::Get(), "ContentBrowser.AssetListView.TableRow")
             [
-                SNew(SHorizontalBox)
-
-                // Viewport
-            + SHorizontalBox::Slot()
-            .AutoWidth()
-            .VAlign(VAlign_Center)
-            [
-                SNew(SBox)
-                .WidthOverride(ThumbnailResolution + ThumbnailBoxPadding * 2)
-                .HeightOverride(ThumbnailResolution + ThumbnailBoxPadding * 2)
+                SNew(SUniformGridPanel)
+                .SlotPadding(2)
+                + SUniformGridPanel::Slot(0, 0)
                 [
-                    // Drop shadow border
-                    SNew(SBorder)
-                    .Padding(ThumbnailBoxPadding)
-                    .BorderImage(FEditorStyle::GetBrush("ContentBrowser.ThumbnailShadow"))
+                    SNew(SHorizontalBox)
+                    // Viewport
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .VAlign(VAlign_Center)
                     [
-                        Item->Thumbnail->MakeThumbnailWidget(ThumbnailConfig)
+                        SNew(SBox)
+                        .WidthOverride(ThumbnailResolution + ThumbnailBoxPadding * 2)
+                        .HeightOverride(ThumbnailResolution + ThumbnailBoxPadding * 2)
+                        [
+                            // Drop shadow border
+                            SNew(SBorder)
+                            .Padding(ThumbnailBoxPadding)
+                            .BorderImage(FEditorStyle::GetBrush("ContentBrowser.ThumbnailShadow"))
+                            [
+                                Item->Thumbnail->MakeThumbnailWidget(ThumbnailConfig)
+                            ]
+                        ]
                     ]
+                    + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .Padding(6, 0, 0, 0)
+                        .VAlign(VAlign_Center)
+                        [
+                            SNew(SVerticalBox)
+                            + SVerticalBox::Slot()
+                            .AutoHeight()
+                            .Padding(0, 1)
+                            [
+                                SNew(STextBlock)
+                                .Font(FEditorStyle::GetFontStyle("ContentBrowser.AssetTileViewNameFont"))
+                                .Text(FText::FromName(ListAssetData.AssetName))
+                            ]
+
+                            + SVerticalBox::Slot()
+                            .AutoHeight()
+                            .Padding(0, 1)
+                            [
+                                // Class
+                                SNew(STextBlock)
+                                .Font(FEditorStyle::GetFontStyle("ContentBrowser.AssetListViewClassFont"))
+                                .Text(FText::FromString("Datasmith Material"))
+                            ]
+                        ]
                 ]
-            ]
-
-            + SHorizontalBox::Slot()
-                .AutoWidth()
-                .Padding(6, 0, 0, 0)
-                .VAlign(VAlign_Center)
+                + SUniformGridPanel::Slot(1, 0)
                 [
-                    SNew(SVerticalBox)
-
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(0, 1)
+                    SNew(SHorizontalBox)
+                    +SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .Padding(10, 0, 0, 0)
+                    .VAlign(VAlign_Center)
                     [
-                        SNew(STextBlock)
-                        .Font(FEditorStyle::GetFontStyle("ContentBrowser.AssetTileViewNameFont"))
-                        .Text(FText::FromName(ListAssetData.AssetName))
+                        SNew(SBox)
+                        .WidthOverride(ThumbnailResolution + ThumbnailBoxPadding * 2)
+                        .HeightOverride(ThumbnailResolution + ThumbnailBoxPadding * 2)
+                        [
+                            // Drop shadow border
+                            SNew(SBorder)
+                            .Padding(ThumbnailBoxPadding)
+                            .BorderImage(FEditorStyle::GetBrush("ContentBrowser.ThumbnailShadow"))
+                            [
+                                 Item->MatchThumbnail->MakeThumbnailWidget(ThumbnailConfig)
+                            ]
+                        ]
                     ]
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .Padding(6, 0, 0, 0)
+                    .VAlign(VAlign_Center)
+                    [
+                        SNew(SVerticalBox)
+                        + SVerticalBox::Slot()
+                        .AutoHeight()
+                        .Padding(0, 1)
+                        [
+                            SNew(STextBlock)
+                            .Font(FEditorStyle::GetFontStyle("ContentBrowser.AssetTileViewNameFont"))
+                            .Text(FText::FromName(MatchedListAssetData.AssetName))
+                        ]
 
-                    + SVerticalBox::Slot()
+                        + SVerticalBox::Slot()
                         .AutoHeight()
                         .Padding(0, 1)
                         [
                             // Class
                             SNew(STextBlock)
                             .Font(FEditorStyle::GetFontStyle("ContentBrowser.AssetListViewClassFont"))
-                            .Text(FText::FromName(ListAssetData.AssetClass))
+                            .Text(FText::FromString("UnrealLib Material"))
                         ]
                     ]
+                ]
+                + SUniformGridPanel::Slot(2, 0)
+                [
+                    SNew(SHorizontalBox)
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .Padding(10, 0, 0, 0)
+                    .VAlign(VAlign_Center)
+                    [
+                        SNew(STextBlock)
+                        .Font(FEditorStyle::GetFontStyle("ContentBrowser.AssetListViewClassFont"))
+                        .Text(FText::FromString(SMatTabPanel::GetTypeOfMatch(Item)))
+                    ]
+                ]
         ];
     
+}
+
+FString SMatTabPanel::GetTypeOfMatch(TSharedPtr<FMatItem> Item) {
+    return Item->isExactMatch ? "Exact Match" : "Get Suggestion";
 }
 
 #undef LOCTEXT_NAMESPACE

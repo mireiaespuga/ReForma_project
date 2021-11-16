@@ -16,10 +16,16 @@ struct FMatItem
 {
     FString ObjectPath;
     TSharedPtr<class FAssetThumbnail> Thumbnail;
+    FString MatchObjectPath;
+    TSharedPtr<class FAssetThumbnail> MatchThumbnail;
+    bool isExactMatch;
 
-    FMatItem(const FString& InObjectPath, const TSharedPtr<class FAssetThumbnail>& InThumbnail)
+    FMatItem(const FString& InObjectPath, const TSharedPtr<class FAssetThumbnail>& InThumbnail, const FString& InMatchObjectPath, const TSharedPtr<class FAssetThumbnail>& InMatchThumbnail, const bool &inIsExactMatch)
         : ObjectPath(InObjectPath)
         , Thumbnail(InThumbnail)
+        , MatchObjectPath(InMatchObjectPath)
+        , MatchThumbnail(InMatchThumbnail)
+        , isExactMatch(inIsExactMatch)
     {}
 };
 
@@ -44,6 +50,7 @@ class SMatTabPanel : public SCompoundWidget
         FString GetGeometriesPath();
         FString GetMaterialsPath();
         FString GetUnrealLibraryPath();
+        FString GetTypeOfMatch(TSharedPtr<FMatItem> Item);
         void LoadData();
         bool isSceneFolderValid() const;
        
@@ -58,18 +65,12 @@ public:
     FString MaxMatsTablePath = "DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'";
 
     bool isCSVPathValid = false;
-    
-    /* The list of strings */
+
     TArray<TSharedPtr<FMatItem>> Items;
 
     /* The actual UI list */
     TSharedPtr<SListView<TSharedPtr<FMatItem>>> ListViewWidget;
-    TSharedPtr<class FAssetThumbnailPool> ThumbnailPool = MakeShareable(
-        new FAssetThumbnailPool(
-            25,
-            false
-        )
-    );
+    TSharedPtr<class FAssetThumbnailPool> ThumbnailPool = MakeShareable(new FAssetThumbnailPool(25, false));
 
 protected:
 
