@@ -403,6 +403,8 @@ FReply SMatTabPanel::ButtonPressed()
                 FAssetData MatchedAssetData = FAssetData(matchmat);
                 TSharedPtr<FAssetThumbnail> matchedThumbnail = MakeShareable(new FAssetThumbnail(MatchedAssetData, ThumbnailResolution, ThumbnailResolution, ThumbnailPool));
                 
+                //TODO: show if matched mat is the same or not!!!!! not show all table show materials that will be swapped!
+
                 TSharedPtr<FMatItem> NewItem = MakeShareable(new FMatItem(mat->GetPathName(), Thumbnail, matchmat->GetPathName(), matchedThumbnail, true));
                 Items.Add(NewItem);
             }
