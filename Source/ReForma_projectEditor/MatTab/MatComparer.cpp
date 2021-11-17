@@ -420,8 +420,7 @@ FString FMatComparer::MaxMatToFTableMat(UMaterialInterface* maxmat, int it) {
 
         //find parameter name
         FString pName, paramString;
-        TArray<FMaterialParameterInfo> param = ParamsMax.FilterByPredicate([&](const FMaterialParameterInfo p) {        
-     
+        TArray<FMaterialParameterInfo> param = ParamsMax.FilterByPredicate([&](const FMaterialParameterInfo p) {         
             maxmat->GetTextureParameterValue(p, texvalue);
             return texvalue->GetFName() == usedText->GetFName();
         });
@@ -431,6 +430,10 @@ FString FMatComparer::MaxMatToFTableMat(UMaterialInterface* maxmat, int it) {
             param.Pop().Name.ToString().Split(TEXT(" ("), &pName, NULL);
 
             paramString = pName + "=" + usedText->GetFName().ToString() + ";";
+            texparams.Append(paramString);
+        }
+        else { //For textures such as emissive lights that are not registered as global textures => no param name but existing used texture
+            paramString = "Other_Text=" + usedText->GetFName().ToString() + ";";
             texparams.Append(paramString);
         }
     }
