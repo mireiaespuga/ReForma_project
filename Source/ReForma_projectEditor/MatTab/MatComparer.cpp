@@ -53,19 +53,20 @@ void FMatComparer::ParseString(FString text, const FString type, UEMatComparer& 
         if (type == "TEXTURES") {
             dataId = dataId + "_" + FString::FromInt(it);
             it++;
-
             uemat.TextureNames.Emplace(dataId, FName(dataValue));
             uemat.TextureNames.KeySort(TLess<FString>());
         }
         else if (type == "SCALAR") {
             float value = FCString::Atof(*dataValue);
             uemat.ScalarValueParams.Emplace(dataId, value);
+            uemat.VectorValueParams.KeySort(TLess<FString>());
         }
         else if (type == "VECTOR") {
             FLinearColor color;
             dataValue = dataValue.Replace(TEXT("|"), TEXT(","));
             color.InitFromString(dataValue);
             uemat.VectorValueParams.Emplace(dataId, color);
+            uemat.VectorValueParams.KeySort(TLess<FString>());
         }
         auxtext = Right;
     }
@@ -150,9 +151,17 @@ UEMatComparer* FMatComparer::GetUeMatMatch(UMaterialInterface* realMaxmat, TArra
         UEMatComparer* match = matches.Pop();
         // check exact paramaters match
         float m1match = FMatComparer::TextureCheck(*realMaxmat, *match, true);
+        if (!FMatComparer::TextureCheck(*realMaxmat, *match, true)) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Purple, match->MaterialName.ToString() + "  -->  " + TEXT("tex"));
+
         m1match += FMatComparer::FatherCheck(*realMaxmat, *match);
+        if (!FMatComparer::FatherCheck(*realMaxmat, *match)) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Purple, match->MaterialName.ToString() + "  -->  " + TEXT("father"));
+
         m1match += FMatComparer::ScalarParamsCheck(*realMaxmat, *match, 1.0, true);
+        if (!FMatComparer::ScalarParamsCheck(*realMaxmat, *match, 1.0, true)) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Purple, match->MaterialName.ToString() + "  -->  " + TEXT("sca"));
+
         m1match += FMatComparer::VectorParamsCheck(*realMaxmat, *match, 1.0, true);
+        if (!FMatComparer::VectorParamsCheck(*realMaxmat, *match, 1.0, true)) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Purple, match->MaterialName.ToString() + "  -->  " + TEXT("vec"));
+
         if (m1match == 4.0) return match; 
     } 
     return NULL;
@@ -184,8 +193,8 @@ float FMatComparer::TextureCheck(UMaterialInterface& realuemat, UEMatComparer& m
             matches = TexMax[i]->GetFName() == uetexNames[i] ? matches + 1 : matches; //share textures
         }
     }
-
-    if (exactMatch) return matches == TexMax.Num() || noText ? 1.0 : 0.0;
+    
+    if (exactMatch) return FMath::FloorToInt(matches) == TexMax.Num() || noText ? 1.0 : 0.0;
     else return matches;
 }
 
@@ -201,20 +210,26 @@ float FMatComparer::ScalarParamsCheck(UMaterialInterface& maxmat, UEMatComparer&
     TArray <FGuid> ScalarIdMax;
     maxmat.GetAllScalarParameterInfo(ScalarParamsMax, ScalarIdMax);
     float pmaxvalue;
+    bool noScal = false;
+
+    if (ScalarParamsMax.Num() == 0 && uemat.ScalarValueParams.Num() == 0) {
+        noScal = true;
+    }
+    
 
     for (auto p : ScalarParamsMax) {
         //TODO: if (9) is irrelevant remove it at the end of p.Name. i.e Fresnel_IOR (9) -> Fresnel_IOR
 
-        FString pName;
-        p.Name.ToString().Split(TEXT(" ("), &pName, NULL);
-        float pUevalue = uemat.ScalarValueParams.Contains(pName) ? uemat.ScalarValueParams[pName] : -1.0f;
+        /*FString pName;
+        p.Name.ToString().Split(TEXT(" ("), &pName, NULL);*/
+        float pUevalue = uemat.ScalarValueParams.Contains(p.Name.ToString()) ? uemat.ScalarValueParams[p.Name.ToString()] : -1.0f;
 
         if (maxmat.GetScalarParameterValue(p, pmaxvalue)) {
             matches = pmaxvalue == pUevalue ? matches + matchWeight : matches; //have same scalar param value
         }
 
     }
-    if (exactMatch) return matches == ScalarParamsMax.Num() * matchWeight ? 1.0 : 0.0;
+    if (exactMatch) return matches == ScalarParamsMax.Num() * matchWeight || noScal ? 1.0 : 0.0;
     else return matches;
 }
 
@@ -225,19 +240,25 @@ float FMatComparer::VectorParamsCheck(UMaterialInterface& maxmat, UEMatComparer&
     TArray <FGuid> VecIdMax;
     maxmat.GetAllVectorParameterInfo(VecParamsMax, VecIdMax);
     FLinearColor pmaxvalue;
+    bool noVect = false;
+
+    if (VecParamsMax.Num() == 0 && uemat.VectorValueParams.Num() == 0) {
+        noVect = true;
+    }
 
     for (auto p : VecParamsMax) {
         //TODO: if (9) is irrelevant remove it at the end of p.Name. i.e Fresnel_IOR (9) -> Fresnel_IOR
+        /*FString pName;
+        p.Name.ToString().Split(TEXT(" ("), &pName, NULL);*/
 
-        FString pName;
-        p.Name.ToString().Split(TEXT(" ("), &pName, NULL);
-        FLinearColor pUevalue = uemat.VectorValueParams.Contains(pName) ? uemat.VectorValueParams[pName] : FLinearColor(-1.0f, -1.0f, -1.0f, -1.0f);
+        FLinearColor pUevalue = uemat.VectorValueParams.Contains(p.Name.ToString()) ? uemat.VectorValueParams[p.Name.ToString()] : FLinearColor(-1.0f, -1.0f, -1.0f, -1.0f);
 
         if (maxmat.GetVectorParameterValue(p, pmaxvalue)) {
             matches = pmaxvalue.Equals(pUevalue) ? matches + matchWeight : matches; //have same scalar param value
         }
     }
-    if (exactMatch) return matches == VecParamsMax.Num() * matchWeight ? 1.0 : 0.0;
+
+    if (exactMatch) return matches == VecParamsMax.Num() * matchWeight || noVect ? 1.0f : 0.0f;
     else return matches;
 
 }
@@ -278,6 +299,7 @@ void FMatComparer::SwapMaterials() {
                         TArray<UMaterialInterface*> unrealLibMats = FMatComparer::RealUnrealMats.FilterByPredicate([&](const UMaterialInterface* realLibMat) {
                             return realLibMat->GetFName() == UEmaterialMatch->UMaterialMatch;
                             });
+                        
                         if (unrealLibMats.Num() > 0) {
                             UMaterialInterface* unrealLibMat = unrealLibMats.Pop();
                             //if match is found in unreal library, swap datasmith material for unrealLibMaterial
@@ -294,6 +316,7 @@ void FMatComparer::SwapMaterials() {
             }
         }
     }
+    
 }
 
 void FMatComparer::GetUEMatSuggestions(UMaterialInterface* maxmat, TArray<UEMatComparer*>& Unrealmats) {
@@ -366,7 +389,8 @@ FString FMatComparer::MaxMatToFTableMat(UMaterialInterface* maxmat, int it) {
         p.Name.ToString().Split(TEXT(" ("), &pName, NULL);
         maxmat->GetScalarParameterValue(p, pmaxvalue);
 
-        paramString = pName + "=" + FString::SanitizeFloat(pmaxvalue) + ";";
+        paramString = p.Name.ToString() + "=" + FString::SanitizeFloat(pmaxvalue) + ";";
+        //paramString = pName + "=" + FString::SanitizeFloat(pmaxvalue) + ";";
         scalarparams.Append(paramString);
 
     }
@@ -380,20 +404,35 @@ FString FMatComparer::MaxMatToFTableMat(UMaterialInterface* maxmat, int it) {
         p.Name.ToString().Split(TEXT(" ("), &pName, NULL);
         maxmat->GetVectorParameterValue(p, pmaxvecvalue);
         FString formattedvec = pmaxvecvalue.ToString().Replace(TEXT(","), TEXT("|")); //(r=0.0 | g=0.0 | b=0.0 | a=0.0) for csv parsing
-        paramString = pName + "=" + formattedvec + ";";
+        
+        paramString = p.Name.ToString() + "=" + formattedvec + ";";
+        //paramString = pName + "=" + formattedvec + ";";
         vecparams.Append(paramString);
     }
     
     UTexture* texvalue;
     maxmat->GetAllTextureParameterInfo(ParamsMax, IdMax);
-    for (auto p : ParamsMax) {
+    TArray<UTexture*> TexMax, alltex;
+    maxmat->GetUsedTextures(TexMax, EMaterialQualityLevel::High, true, ERHIFeatureLevel::SM5, true);
+    int iter = 0;
 
+    for (auto usedText : TexMax) { //For each udsed texture
+
+        //find parameter name
         FString pName, paramString;
-        p.Name.ToString().Split(TEXT(" ("), &pName, NULL);
-        maxmat->GetTextureParameterValue(p, texvalue);
+        TArray<FMaterialParameterInfo> param = ParamsMax.FilterByPredicate([&](const FMaterialParameterInfo p) {        
+     
+            maxmat->GetTextureParameterValue(p, texvalue);
+            return texvalue->GetFName() == usedText->GetFName();
+        });
 
-        paramString = pName + "=" + texvalue->GetFName().ToString() + ";";
-        texparams.Append(paramString);
+        //add used texture w/ parameter name
+        if (param.Num() > 0) {
+            param.Pop().Name.ToString().Split(TEXT(" ("), &pName, NULL);
+
+            paramString = pName + "=" + usedText->GetFName().ToString() + ";";
+            texparams.Append(paramString);
+        }
     }
 
     //FTableMaterial* tablemat = new FTableMaterial(materialname, fathername, texparams, scalarparams, vecparams);
