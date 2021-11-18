@@ -33,17 +33,18 @@ class FMatComparer : public SCompoundWidget
 
 public:
     TArray<UMaterialInterface*> AssetMats;
-    TArray<UEMatComparer*> UnrealMats;
+    TArray<UEMatComparer*> DictionaryMats;
+    TArray<UEMatComparer*> SceneMats;
     TArray<UMaterialInterface*> RealUnrealMats;
     TArray<UStaticMesh*> AssetMeshes;
-    UDataTable* MaxMatsTable; 
+    UDataTable* DictionaryTable; 
 
     virtual UEMatComparer* GetUeMatMatch(UMaterialInterface* realuemat, TArray<UEMatComparer*>& maxmats);
     virtual void SetUeMatMatch(UMaterialInterface* realuemat, UEMatComparer*& maxmatmatch);
     virtual void SwapMaterials();
-    virtual void GetUEMatSuggestions(UMaterialInterface* maxmat, TArray<UEMatComparer*>& UnrealMats);
+    virtual TArray<UEMatComparer*> GetUEMatSuggestions(UMaterialInterface* realuemat, TArray<UEMatComparer*> mats);
     
-    virtual TArray<UEMatComparer*> GetUEMaterials();
+    virtual TArray<UEMatComparer*> GetUEMaterials(const FString type);
     virtual TArray<UStaticMesh*> GetDatasmithGeometries(FName Path);
     virtual TArray<UMaterialInterface*> GetDatasmithMaterials(FName Path);
     virtual TArray<UDataTable*> GetDataTables(FName Path);

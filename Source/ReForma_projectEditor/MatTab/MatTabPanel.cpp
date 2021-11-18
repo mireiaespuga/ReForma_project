@@ -7,6 +7,7 @@
 #include "Dom/JsonObject.h"
 #include "Misc/Paths.h"
 #include "SlateBasics.h"
+#include "ThumbnailRendering/ThumbnailManager.h"
 
 
 #define LOCTEXT_NAMESPACE "SMatTabPanel"
@@ -151,14 +152,7 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
                         SNullWidget::NullWidget
                     ]*/    
                ]
-               //Creating the button that adds a new item on the list when pressed
-                   + SScrollBox::Slot()
-                   [
-                       SNew(SButton)
-                       .Text(FText::FromString("Add new list item"))
-                       .OnClicked(this, &SMatTabPanel::ButtonPressed)
-                   ]
-             
+              
                + SScrollBox::Slot()
                 .VAlign(VAlign_Top)
                 .Padding(5)
@@ -166,17 +160,36 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
                     SNew(SBorder)
                     .BorderBackgroundColor(FColor(192, 192, 192, 255))
                     .Padding(15.0f)
-                   /* [
-                       SNew(SButton)
-                       .Text(FText::FromString("Add new list item"))
-                       .OnClicked(this, &SMatTabPanel::ButtonPressed)
-                    ]*/
-                    [
-                        SAssignNew(ListViewWidget, SListView<TSharedPtr<FMatItem>>)
-                        .ItemHeight(24)
-                        .ListItemsSource(&Items) //The Items array is the source of this listview
-                        .OnGenerateRow(this, &SMatTabPanel::OnGenerateRowForList)
-                    ]
+                   [
+                       SNew(SVerticalBox) 
+                       + SVerticalBox::Slot()
+                       .AutoHeight()
+                       .Padding(0.f, 0.f, 0.f, 4.f)
+                       [
+                           SNew(SHorizontalBox)
+                           + SHorizontalBox::Slot()
+                           .AutoWidth()
+                           .VAlign(VAlign_Center)
+                           [
+                               SNew(SButton)
+                               .Text(FText::FromString("Visualize Materials"))
+                               .OnClicked(this, &SMatTabPanel::ButtonPressed) 
+                               .IsEnabled(this, &SMatTabPanel::CanChangeMat)
+                               //.ButtonColorAndOpacity(FColor::Transparent)
+                               //.ButtonStyle(this, &SItemWidget::GetItemIcon)
+                               
+
+                           ]        
+                       ]
+                       + SVerticalBox::Slot()
+                       .AutoHeight()
+                        [
+                            SAssignNew(ListViewWidget, SListView<TSharedPtr<FMatItem>>)
+                            .ItemHeight(24)
+                            .ListItemsSource(&Items) //The Items array is the source of this listview
+                            .OnGenerateRow(this, &SMatTabPanel::OnGenerateRowForList)
+                        ]
+                   ]
                 ]
                    
         ];
@@ -347,7 +360,8 @@ bool SMatTabPanel::CanChangeMat() const
 void SMatTabPanel::LoadData() {
     MatComparer.AssetMeshes = MatComparer.GetDatasmithGeometries(FName(SMatTabPanel::GetGeometriesPath()));
     MatComparer.AssetMats = MatComparer.GetDatasmithMaterials(FName(SMatTabPanel::GetMaterialsPath()));
-    MatComparer.UnrealMats = MatComparer.GetUEMaterials();
+    MatComparer.DictionaryMats = MatComparer.GetUEMaterials("DICTIONARY");
+    MatComparer.SceneMats = MatComparer.GetUEMaterials("SCENE");
     MatComparer.RealUnrealMats = MatComparer.GetDatasmithMaterials(FName(SMatTabPanel::GetUnrealLibraryPath()));
 }
 
@@ -379,11 +393,11 @@ FReply SMatTabPanel::ButtonPressed()
     SMatTabPanel::LoadData();
     Items.Empty();
 
-    for (auto uetablemat : MatComparer.UnrealMats) {
+    for (auto uetablemat : MatComparer.SceneMats) {
         //Adds a new item to the array (do whatever you want with this)
 
-        TArray<UMaterialInterface*> assetmat = MatComparer.AssetMats.FilterByPredicate([&](const UMaterialInterface* assetMat) {
-            return assetMat->GetFName() == uetablemat->MaterialName;
+        TArray<UMaterialInterface*> assetmat = MatComparer.AssetMats.FilterByPredicate([&](UMaterialInterface* assetMat) {
+            return MatComparer.MatNameCheck(*assetMat, *uetablemat);
             });
         TArray<UMaterialInterface*> matchedmat = MatComparer.RealUnrealMats.FilterByPredicate([&](const UMaterialInterface* ulibMat) {
             return ulibMat->GetFName() == uetablemat->UMaterialMatch;
@@ -392,24 +406,44 @@ FReply SMatTabPanel::ButtonPressed()
         if (assetmat.Num() > 0) {
            
             UMaterialInterface* mat = assetmat.Pop();
-
-           /* UTexture2D* CurrentObject = mat.tex*/
             FAssetData AssetData = FAssetData(mat);  
             const uint32 ThumbnailResolution = 64;
             TSharedPtr<FAssetThumbnail> Thumbnail = MakeShareable(new FAssetThumbnail(AssetData, ThumbnailResolution, ThumbnailResolution, ThumbnailPool));
-            
-            if (matchedmat.Num() > 0) {
+
+
+            if (matchedmat.Num() > 0) { //There's an exact match from dictionary
                 UMaterialInterface* matchmat = matchedmat.Pop();
                 FAssetData MatchedAssetData = FAssetData(matchmat);
                 TSharedPtr<FAssetThumbnail> matchedThumbnail = MakeShareable(new FAssetThumbnail(MatchedAssetData, ThumbnailResolution, ThumbnailResolution, ThumbnailPool));
                 
-                //TODO: show if matched mat is the same or not!!!!! not show all table show materials that will be swapped!
+                //TODO: show CHECK if matched mat is the same or not!!!!! not show all table show materials that will be swapped!
 
                 TSharedPtr<FMatItem> NewItem = MakeShareable(new FMatItem(mat->GetPathName(), Thumbnail, matchmat->GetPathName(), matchedThumbnail, true));
                 Items.Add(NewItem);
             }
-            else {
+            else { //no dictionary entry
                 //TODO: try showing suggestions when no match is found!
+                //TODO: show if matched mat is the same or not!!!!! not show all table show materials that will be swapped!
+
+                //Get suggestions for closest maxmats materials in dictionnary
+                TArray<UEMatComparer*> suggestions = MatComparer.GetUEMatSuggestions(mat, MatComparer.DictionaryMats);
+
+                ////Find the matched unreal material related to the first suggestion
+                if (suggestions.Num() > 0) {
+                    UEMatComparer* firstsuggest = suggestions[0];
+                    TArray<UMaterialInterface*> suggestedmat = MatComparer.RealUnrealMats.FilterByPredicate([&](const UMaterialInterface* ulibMat) {
+                        return ulibMat->GetFName() == firstsuggest->UMaterialMatch;
+                        });
+
+                    if (suggestedmat.Num() > 0) {
+                        UMaterialInterface* matchmat = suggestedmat.Pop();                     
+                        FAssetData MatchedAssetData = FAssetData(matchmat);
+                        TSharedPtr<FAssetThumbnail> matchedThumbnail = MakeShareable(new FAssetThumbnail(MatchedAssetData, ThumbnailResolution, ThumbnailResolution, ThumbnailPool));
+                        TSharedPtr<FMatItem> NewItem = MakeShareable(new FMatItem(mat->GetPathName(), Thumbnail, matchmat->GetPathName(), matchedThumbnail, false));
+                        Items.Add(NewItem);
+                    }
+                }
+
             }
             
         } 
@@ -421,6 +455,10 @@ FReply SMatTabPanel::ButtonPressed()
 
     return FReply::Handled();
 }
+
+//TSharedRef<ITableRow> SMatTabPanel::OnGenerateSuggestions(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable){
+//
+//}
 
 TSharedRef<ITableRow> SMatTabPanel::OnGenerateRowForList(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable)
 {
@@ -557,7 +595,7 @@ TSharedRef<ITableRow> SMatTabPanel::OnGenerateRowForList(TSharedPtr<FMatItem> It
 }
 
 FString SMatTabPanel::GetTypeOfMatch(TSharedPtr<FMatItem> Item) {
-    return Item->isExactMatch ? "Exact Match" : "Get Suggestion";
+    return Item->isExactMatch ? "Exact Match" : "Suggestion";
 }
 
 #undef LOCTEXT_NAMESPACE

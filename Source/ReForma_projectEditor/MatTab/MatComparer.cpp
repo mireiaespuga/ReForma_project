@@ -92,36 +92,51 @@ TArray < UDataTable*> FMatComparer::GetDataTables(FName Path) {
     return DataTables;
 }
 
-TArray<UEMatComparer*> FMatComparer::GetUEMaterials() {
+TArray<UEMatComparer*> FMatComparer::GetUEMaterials(const FString type) {
 
     /*UDataTable* UETable = (FMatComparer::GetDataTables(Path).FilterByPredicate([](UDataTable* asset) {
         return asset->GetFName().ToString().Contains(TEXT("MaxMats"));
         }).Pop());*/ 
-    UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
-    FMatComparer::MaxMatsTable = UETable;
     TArray<UEMatComparer*> UEMats;
-  
-    for (auto it : UETable->GetRowMap())
-    {
-        // it.Key has the key from first column of the CSV file
-        // it.Value has a pointer to a struct of data. You can safely cast it to your actual type, e.g FMyStruct* data = (FMyStruct*)(it.Value);
-        FTableMaterial* data = (FTableMaterial*)(it.Value);
-        UEMatComparer* uemat = new UEMatComparer();
+    if (type == "DICTIONARY") {
+        UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
+        FMatComparer::DictionaryTable = UETable;
 
-        //start parsing strings into correct UEMatComparer materials
-        uemat->MaterialName = FName(data->MaterialName);      
-        uemat->FatherName = FName(data->FatherName);
-        uemat->UMaterialMatch = FName(data->UMaterialMatch);
+        for (auto it : UETable->GetRowMap())
+        {
+            // it.Key has the key from first column of the CSV file
+            // it.Value has a pointer to a struct of data. You can safely cast it to your actual type, e.g FMyStruct* data = (FMyStruct*)(it.Value);
+            FTableMaterial* data = (FTableMaterial*)(it.Value);
+            UEMatComparer* uemat = new UEMatComparer();
 
-        FMatComparer::ParseString(data->TextureNames, "TEXTURES", *uemat);
-        FMatComparer::ParseString(data->ScalarParamValues, "SCALAR", *uemat);
-        FMatComparer::ParseString(data->VectorParamValues, "VECTOR", *uemat);
+            //start parsing strings into correct UEMatComparer materials
+            uemat->MaterialName = FName(data->MaterialName);
+            uemat->FatherName = FName(data->FatherName);
+            uemat->UMaterialMatch = FName(data->UMaterialMatch);
 
-        UEMats.Push(uemat);
+            FMatComparer::ParseString(data->TextureNames, "TEXTURES", *uemat);
+            FMatComparer::ParseString(data->ScalarParamValues, "SCALAR", *uemat);
+            FMatComparer::ParseString(data->VectorParamValues, "VECTOR", *uemat);
+
+            UEMats.Push(uemat);
+        }
     }
-
+    else if (type == "SCENE") {
+        for (auto asset : FMatComparer::AssetMats) {
+            UEMatComparer* uemat = new UEMatComparer();
+            uemat->MaterialName = asset->GetFName();
+            if (FMatComparer::DictionaryMats.Num() > 0) {
+                UEMatComparer* matched = FMatComparer::GetUeMatMatch(asset, FMatComparer::DictionaryMats);
+                if (matched) uemat->UMaterialMatch = matched->UMaterialMatch;
+            }
+            UEMats.Push(uemat);
+        }
+    }
+    
     return UEMats;
 }
+
+
 
 //bool MaterialComparer(UMaterial& mat1, UMaterial& mat2) {
 //
@@ -218,13 +233,25 @@ float FMatComparer::ScalarParamsCheck(UMaterialInterface& maxmat, UEMatComparer&
     
 
     for (auto p : ScalarParamsMax) {
-        //TODO: if (9) is irrelevant remove it at the end of p.Name. i.e Fresnel_IOR (9) -> Fresnel_IOR
-
-        /*FString pName;
-        p.Name.ToString().Split(TEXT(" ("), &pName, NULL);*/
-        float pUevalue = uemat.ScalarValueParams.Contains(p.Name.ToString()) ? uemat.ScalarValueParams[p.Name.ToString()] : -1.0f;
-
+        
         if (maxmat.GetScalarParameterValue(p, pmaxvalue)) {
+            float pUevalue;
+            if (exactMatch) {
+                pUevalue = uemat.ScalarValueParams.Contains(p.Name.ToString()) ? uemat.ScalarValueParams[p.Name.ToString()] : -1.0f;
+            }
+            else {
+                //TODO: if (9) is irrelevant remove it at the end of p.Name. i.e Fresnel_IOR (9) -> Fresnel_IOR
+                FString pName;
+                p.Name.ToString().Split(TEXT(" ("), &pName, NULL);
+                TMap <FString, float> filteredparams = uemat.ScalarValueParams.FilterByPredicate([&](TPair <FString, float> sca) {
+                    FString auxName;
+                    sca.Key.Split(TEXT(" ("), &auxName, NULL);
+                    return auxName == pName;
+                    });
+                TArray<FString> keys;
+                filteredparams.GenerateKeyArray(keys);
+                pUevalue = filteredparams.Num() > 0 ? filteredparams[keys[0]] : -1.0f;
+            }
             matches = pmaxvalue == pUevalue ? matches + matchWeight : matches; //have same scalar param value
         }
 
@@ -247,13 +274,26 @@ float FMatComparer::VectorParamsCheck(UMaterialInterface& maxmat, UEMatComparer&
     }
 
     for (auto p : VecParamsMax) {
-        //TODO: if (9) is irrelevant remove it at the end of p.Name. i.e Fresnel_IOR (9) -> Fresnel_IOR
-        /*FString pName;
-        p.Name.ToString().Split(TEXT(" ("), &pName, NULL);*/
-
-        FLinearColor pUevalue = uemat.VectorValueParams.Contains(p.Name.ToString()) ? uemat.VectorValueParams[p.Name.ToString()] : FLinearColor(-1.0f, -1.0f, -1.0f, -1.0f);
-
+        
         if (maxmat.GetVectorParameterValue(p, pmaxvalue)) {
+            FLinearColor pUevalue;
+            if (exactMatch) {
+                pUevalue = uemat.VectorValueParams.Contains(p.Name.ToString()) ? uemat.VectorValueParams[p.Name.ToString()] : FLinearColor(-1.0f, -1.0f, -1.0f, -1.0f);
+            }
+            else {
+                //TODO: if (9) is irrelevant remove it at the end of p.Name. i.e Fresnel_IOR (9) -> Fresnel_IOR
+                FString pName;
+                p.Name.ToString().Split(TEXT(" ("), &pName, NULL);
+                TMap <FString, FLinearColor> filteredparams = uemat.VectorValueParams.FilterByPredicate([&](TPair <FString, FLinearColor> vec) {
+                    FString auxName;
+                    vec.Key.Split(TEXT(" ("), &auxName, NULL);
+                    return auxName == pName;
+                });
+                TArray<FString> keys;
+                filteredparams.GenerateKeyArray(keys);
+                pUevalue = filteredparams.Num() > 0 ? filteredparams[keys[0]] : FLinearColor(-1.0f, -1.0f, -1.0f, -1.0f);
+            }
+        
             matches = pmaxvalue.Equals(pUevalue) ? matches + matchWeight : matches; //have same scalar param value
         }
     }
@@ -264,6 +304,8 @@ float FMatComparer::VectorParamsCheck(UMaterialInterface& maxmat, UEMatComparer&
 }
 
 void FMatComparer::SetUeMatMatch(UMaterialInterface* realuemat, UEMatComparer*& maxmatmatch) {
+    
+    //CHAGE ITTTT SINCE YOU WON'T FIND ROW
     UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
 
     for (auto row : UETable->GetRowMap()) {
@@ -277,7 +319,7 @@ void FMatComparer::SetUeMatMatch(UMaterialInterface* realuemat, UEMatComparer*& 
         }     
     }
 
-    FMatComparer::MaxMatsTable = UETable;
+    FMatComparer::DictionaryTable = UETable;
 }
 
 void FMatComparer::SwapMaterials() {
@@ -292,7 +334,10 @@ void FMatComparer::SwapMaterials() {
                 UMaterialInterface* meshMat = mesh->GetMaterial(index);
                 if (meshMat)
                 {
-                    UEMatComparer* UEmaterialMatch = FMatComparer::GetUeMatMatch(meshMat, FMatComparer::UnrealMats); //get match from maxMats table
+                    //UEMatComparer* UEmaterialMatch = FMatComparer::GetUeMatMatch(meshMat, FMatComparer::DictionaryMats); //get match from maxMats table
+                    UEMatComparer* UEmaterialMatch = *FMatComparer::SceneMats.FindByPredicate([&](UEMatComparer* scenemat) {
+                            return FMatComparer::MatNameCheck(*meshMat, *scenemat);
+                        });
 
                     if (UEmaterialMatch) { //if match exists
                         // find real unreal material which name matches the UMaterialMatch in the table
@@ -319,31 +364,29 @@ void FMatComparer::SwapMaterials() {
     
 }
 
-void FMatComparer::GetUEMatSuggestions(UMaterialInterface* maxmat, TArray<UEMatComparer*>& Unrealmats) {
-    Unrealmats.Sort([&](UEMatComparer& uem1, UEMatComparer& uem2)
+TArray<UEMatComparer*> FMatComparer::GetUEMatSuggestions(UMaterialInterface* realuemat, TArray<UEMatComparer*> mats) {
+
+    mats.Sort([&](UEMatComparer& uem1, UEMatComparer& uem2)
         {
+            float m1match = FMatComparer::TextureCheck(*realuemat, uem1);
+            float m2match = FMatComparer::TextureCheck(*realuemat, uem2);
 
-            float m1match = FMatComparer::TextureCheck(*maxmat, uem1);
-            float m2match = FMatComparer::TextureCheck(*maxmat, uem2);
+            m1match += FMatComparer::FatherCheck(*realuemat, uem1);
+            m2match += FMatComparer::FatherCheck(*realuemat, uem2);
 
-            m1match += FMatComparer::FatherCheck(*maxmat, uem1);
-            m2match += FMatComparer::FatherCheck(*maxmat, uem2);
+            m1match += FMatComparer::ScalarParamsCheck(*realuemat, uem1, 0.25);
+            m2match += FMatComparer::ScalarParamsCheck(*realuemat, uem2, 0.25);
 
-            m1match += FMatComparer::ScalarParamsCheck(*maxmat, uem1, 0.25);
-            m2match += FMatComparer::ScalarParamsCheck(*maxmat, uem2, 0.25);
-
-            m1match += FMatComparer::VectorParamsCheck(*maxmat, uem1, 0.25);
-            m2match += FMatComparer::VectorParamsCheck(*maxmat, uem2, 0.25);
+            m1match += FMatComparer::VectorParamsCheck(*realuemat, uem1, 0.25);
+            m2match += FMatComparer::VectorParamsCheck(*realuemat, uem2, 0.25);
 
             //GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, uem1.GetFName().ToString().Append(uem2.GetFName().ToString()));
             //GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("values m1%f m2%f"), m1match, m2match));
 
             return m1match >= m2match;
         });
-
-    for (auto um : Unrealmats) {
-        GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Purple, um->MaterialName.ToString());
-    }
+    
+    return mats;
 }
 
 void FMatComparer::GenerateCSVwMaxMaterials(const FString SavePath, TArray<UMaterialInterface*> Assetmats) {
@@ -353,6 +396,7 @@ void FMatComparer::GenerateCSVwMaxMaterials(const FString SavePath, TArray<UMate
     CSV.Append("\n");
     for (size_t it = 0; it < Assetmats.Num(); it++){
         CSV.Append(FMatComparer::MaxMatToFTableMat(Assetmats[it], it+1));
+        if (it == 15) break; //TODO: remove
     }
     
     IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
@@ -365,9 +409,8 @@ void FMatComparer::GenerateCSVwMaxMaterials(const FString SavePath, TArray<UMate
     } 
     
     UETable->CreateTableFromCSVString(CSV);
-    FMatComparer::MaxMatsTable = UETable;
+    FMatComparer::DictionaryTable = UETable;
     //FFileHelper::SaveStringToFile(SaveText, *(FPaths::GameDir() + OutFile), EEncodingOptions::AutoDetect, &IFileManager::Get(), FILEWRITE_Append);
-    
     
 }
 
