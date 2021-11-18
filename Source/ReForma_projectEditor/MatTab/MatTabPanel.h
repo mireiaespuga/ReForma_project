@@ -70,7 +70,7 @@ public:
 
     /* The actual UI list */
     TSharedPtr<SListView<TSharedPtr<FMatItem>>> ListViewWidget;
-    TSharedPtr<class FAssetThumbnailPool> ThumbnailPool = MakeShareable(new FAssetThumbnailPool(25, false));
+    TSharedPtr<class FAssetThumbnailPool> ThumbnailPool = MakeShareable(new FAssetThumbnailPool(1024, false));
 
 protected:
 
