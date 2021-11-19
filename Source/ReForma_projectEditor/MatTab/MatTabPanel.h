@@ -54,7 +54,8 @@ class SMatTabPanel : public SCompoundWidget
         void LoadData();
         bool isSceneFolderValid() const;
        
-        FReply ButtonPressed();
+        FReply VisualizeButtonPressed();
+        FReply FilterButtonPressed();
 
         /* Adds a new textbox with the string to the list */
         TSharedRef<ITableRow> OnGenerateRowForList(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable);

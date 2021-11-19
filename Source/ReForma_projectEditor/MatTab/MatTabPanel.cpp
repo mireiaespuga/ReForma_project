@@ -172,13 +172,23 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
                            .VAlign(VAlign_Center)
                            [
                                SNew(SButton)
-                               .Text(FText::FromString("Visualize Materials"))
-                               .OnClicked(this, &SMatTabPanel::ButtonPressed) 
+                               .Text(FText::FromString("Visualize All Materials"))
+                               .OnClicked(this, &SMatTabPanel::VisualizeButtonPressed)
                                .IsEnabled(this, &SMatTabPanel::CanChangeMat)
                                //.ButtonColorAndOpacity(FColor::Transparent)
                                //.ButtonStyle(this, &SItemWidget::GetItemIcon)
-                               
-
+                           ]   
+                           + SHorizontalBox::Slot()
+                           .AutoWidth()
+                           .VAlign(VAlign_Center)
+                           .HAlign(HAlign_Right)
+                           [
+                               SNew(SButton)
+                               .Text(FText::FromString("Filter: only exact matches"))
+                               .OnClicked(this, &SMatTabPanel::FilterButtonPressed) 
+                               .IsEnabled(this, &SMatTabPanel::CanChangeMat)
+                               //.ButtonColorAndOpacity(FColor::Transparent)
+                               //.ButtonStyle(this, &SItemWidget::GetItemIcon)
                            ]        
                        ]
                        + SVerticalBox::Slot()
@@ -388,7 +398,7 @@ void SMatTabPanel::SetCurrentFolderPath(const FString& Directory) {
 }
 
 
-FReply SMatTabPanel::ButtonPressed()
+FReply SMatTabPanel::VisualizeButtonPressed()
 {
     SMatTabPanel::LoadData();
     Items.Empty();
@@ -428,20 +438,35 @@ FReply SMatTabPanel::ButtonPressed()
                 //Get suggestions for closest maxmats materials in dictionnary
                 TArray<UEMatComparer*> suggestions = MatComparer.GetUEMatSuggestions(mat, MatComparer.DictionaryMats);
 
-                ////Find the matched unreal material related to the first suggestion
+                //Find the matched unreal material related to the first suggestion
                 if (suggestions.Num() > 0) {
                     UEMatComparer* firstsuggest = suggestions[0];
                     TArray<UMaterialInterface*> suggestedmat = MatComparer.RealUnrealMats.FilterByPredicate([&](const UMaterialInterface* ulibMat) {
                         return ulibMat->GetFName() == firstsuggest->UMaterialMatch;
                         });
 
+                    UMaterialInterface* matchmat = nullptr;
                     if (suggestedmat.Num() > 0) {
-                        UMaterialInterface* matchmat = suggestedmat.Pop();                     
+                        matchmat = suggestedmat.Pop();
+                    }
+                    else {
+                        for (auto othersugg : suggestions) {
+                            TArray<UMaterialInterface*> suggestedmats = MatComparer.RealUnrealMats.FilterByPredicate([&](const UMaterialInterface* ulibMat) {
+                                return ulibMat->GetFName() == othersugg->UMaterialMatch;
+                                });
+                            if (suggestedmats.Num() > 0) {
+                                matchmat = suggestedmats.Pop();
+                                break;
+                            }
+                        }
+                    }
+
+                    if (matchmat) {
                         FAssetData MatchedAssetData = FAssetData(matchmat);
                         TSharedPtr<FAssetThumbnail> matchedThumbnail = MakeShareable(new FAssetThumbnail(MatchedAssetData, ThumbnailResolution, ThumbnailResolution, ThumbnailPool));
                         TSharedPtr<FMatItem> NewItem = MakeShareable(new FMatItem(mat->GetPathName(), Thumbnail, matchmat->GetPathName(), matchedThumbnail, false));
                         Items.Add(NewItem);
-                    }
+                    }   
                 }
 
             }
@@ -452,10 +477,18 @@ FReply SMatTabPanel::ButtonPressed()
  
     // Update the listview
     ListViewWidget->RequestListRefresh();
-
     return FReply::Handled();
 }
 
+FReply SMatTabPanel::FilterButtonPressed() {
+    SMatTabPanel::LoadData();
+    Items = Items.FilterByPredicate([](TSharedPtr<FMatItem> item) {
+        return item->isExactMatch; });
+
+    // Update the listview
+    ListViewWidget->RequestListRefresh();
+    return FReply::Handled();
+}
 //TSharedRef<ITableRow> SMatTabPanel::OnGenerateSuggestions(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable){
 //
 //}
