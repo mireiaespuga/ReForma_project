@@ -3,7 +3,6 @@
 #include "Widgets/Docking/SDockableTab.h"
 #include "Widgets/Docking/SDockTabStack.h"
 #include "DesktopWidgets/Public/Widgets/Input/SDirectoryPicker.h"
-//#include "DesktopPlatformModule.h"
 #include "Framework/Application/SlateApplication.h"
 #include "MatTab.h"
 #include "MatComparer.h"
@@ -11,6 +10,24 @@
 #include "Containers/Map.h"
 #include "CoreMinimal.h"
 #include "EngineMinimal.h"
+#include "Widgets/Views/SListView.h"
+
+struct FMatItem
+{
+    FString ObjectPath;
+    TSharedPtr<class FAssetThumbnail> Thumbnail;
+    FString MatchObjectPath;
+    TSharedPtr<class FAssetThumbnail> MatchThumbnail;
+    bool isExactMatch;
+
+    FMatItem(const FString& InObjectPath, const TSharedPtr<class FAssetThumbnail>& InThumbnail, const FString& InMatchObjectPath, const TSharedPtr<class FAssetThumbnail>& InMatchThumbnail, const bool &inIsExactMatch)
+        : ObjectPath(InObjectPath)
+        , Thumbnail(InThumbnail)
+        , MatchObjectPath(InMatchObjectPath)
+        , MatchThumbnail(InMatchThumbnail)
+        , isExactMatch(inIsExactMatch)
+    {}
+};
 
 
 class SMatTabPanel : public SCompoundWidget
@@ -18,6 +35,7 @@ class SMatTabPanel : public SCompoundWidget
     SLATE_BEGIN_ARGS(SMatTabPanel)
     {}
     SLATE_ARGUMENT(TWeakPtr<class MatTab>, Tool)
+    
         SLATE_END_ARGS()
 
         void Construct(const FArguments& InArgs);
@@ -32,15 +50,28 @@ class SMatTabPanel : public SCompoundWidget
         FString GetGeometriesPath();
         FString GetMaterialsPath();
         FString GetUnrealLibraryPath();
+        FString GetTypeOfMatch(TSharedPtr<FMatItem> Item);
         void LoadData();
         bool isSceneFolderValid() const;
-        
+       
+        FReply VisualizeButtonPressed();
+        FReply FilterButtonPressed();
+
+        /* Adds a new textbox with the string to the list */
+        TSharedRef<ITableRow> OnGenerateRowForList(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable);
+
 public: 
     
     FString CSVsavePath;
     FString MaxMatsTablePath = "DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'";
 
     bool isCSVPathValid = false;
+
+    TArray<TSharedPtr<FMatItem>> Items;
+
+    /* The actual UI list */
+    TSharedPtr<SListView<TSharedPtr<FMatItem>>> ListViewWidget;
+    TSharedPtr<class FAssetThumbnailPool> ThumbnailPool = MakeShareable(new FAssetThumbnailPool(1024, false));
 
 protected:
 

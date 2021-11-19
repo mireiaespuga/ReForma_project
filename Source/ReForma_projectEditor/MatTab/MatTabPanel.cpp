@@ -6,7 +6,9 @@
 #include "Engine/UserDefinedStruct.h"
 #include "Dom/JsonObject.h"
 #include "Misc/Paths.h"
-#include "Widgets/Views/SListView.h"
+#include "SlateBasics.h"
+#include "ThumbnailRendering/ThumbnailManager.h"
+
 
 #define LOCTEXT_NAMESPACE "SMatTabPanel"
 
@@ -17,6 +19,7 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
     {
         // do anything you need from tool object
     }
+    
     TSharedRef<SWidget> AssetPickerWidget = SNew(SObjectPropertyEntryBox)
         .ObjectPath(TEXT("/Game/Datasmith/test_scene/mymats"))//(this, &SMaterialAnalyzer::GetCurrentAssetPath)
         .AllowedClass(UMaterialInterface::StaticClass())
@@ -26,6 +29,7 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
         .DisplayBrowse(true)
         .NewAssetFactories(TArray<UFactory*>())
         .IsEnabled(true);//(this, &SMaterialAnalyzer::IsMaterialSelectionAllowed);
+
 
     ChildSlot
         [
@@ -128,6 +132,7 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
                                 ]
                     ]
                 ]
+             
             
                 /*+ SHorizontalBox::Slot()
                     .AutoWidth()
@@ -147,19 +152,138 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
                         SNullWidget::NullWidget
                     ]*/    
                ]
-               
+              
+               + SScrollBox::Slot()
+                .VAlign(VAlign_Top)
+                .Padding(5)
+                [
+                    SNew(SBorder)
+                    .BorderBackgroundColor(FColor(192, 192, 192, 255))
+                    .Padding(15.0f)
+                   [
+                       SNew(SVerticalBox) 
+                       + SVerticalBox::Slot()
+                       .AutoHeight()
+                       .Padding(0.f, 0.f, 0.f, 4.f)
+                       [
+                           SNew(SHorizontalBox)
+                           + SHorizontalBox::Slot()
+                           .AutoWidth()
+                           .VAlign(VAlign_Center)
+                           [
+                               SNew(SButton)
+                               .Text(FText::FromString("Visualize All Materials"))
+                               .OnClicked(this, &SMatTabPanel::VisualizeButtonPressed)
+                               .IsEnabled(this, &SMatTabPanel::CanChangeMat)
+                               //.ButtonColorAndOpacity(FColor::Transparent)
+                               //.ButtonStyle(this, &SItemWidget::GetItemIcon)
+                           ]   
+                           + SHorizontalBox::Slot()
+                           .AutoWidth()
+                           .VAlign(VAlign_Center)
+                           .HAlign(HAlign_Right)
+                           [
+                               SNew(SButton)
+                               .Text(FText::FromString("Filter: only exact matches"))
+                               .OnClicked(this, &SMatTabPanel::FilterButtonPressed) 
+                               .IsEnabled(this, &SMatTabPanel::CanChangeMat)
+                               //.ButtonColorAndOpacity(FColor::Transparent)
+                               //.ButtonStyle(this, &SItemWidget::GetItemIcon)
+                           ]        
+                       ]
+                       + SVerticalBox::Slot()
+                       .AutoHeight()
+                        [
+                            SAssignNew(ListViewWidget, SListView<TSharedPtr<FMatItem>>)
+                            .ItemHeight(24)
+                            .ListItemsSource(&Items) //The Items array is the source of this listview
+                            .OnGenerateRow(this, &SMatTabPanel::OnGenerateRowForList)
+                        ]
+                   ]
+                ]
                    
         ];
 }
 
-TSharedRef<ITableRow> MakeListViewWidget(TSharedRef<FText> Item, const TSharedRef<STableViewBase>& OwnerTable)
-{
-    return
-        SNew(STableRow< TSharedRef<FText> >, OwnerTable)
-        [
-            SNew(STextBlock).Text(Item.Get())
-        ];
-}
+//TSharedRef<ITableRow> MakeTileViewWidget(TSharedPtr<FAssetViewItem> AssetItem, const TSharedRef<STableViewBase>& OwnerTable)
+//{
+//    if (!ensure(AssetItem.IsValid()))
+//    {
+//        return SNew(STableRow<TSharedPtr<FAssetViewItem>>, OwnerTable);
+//    }
+//
+//    VisibleItems.Add(AssetItem);
+//    bPendingUpdateThumbnails = true;
+//
+//    if (AssetItem->IsFolder())
+//    {
+//        TSharedPtr< STableRow<TSharedPtr<FAssetViewItem>> > TableRowWidget;
+//        SAssignNew(TableRowWidget, STableRow<TSharedPtr<FAssetViewItem>>, OwnerTable)
+//            .Style(FEditorStyle::Get(), "ContentBrowser.AssetListView.TableRow")
+//            .Cursor(bAllowDragging ? EMouseCursor::GrabHand : EMouseCursor::Default)
+//            .OnDragDetected(this, &SAssetView::OnDraggingAssetItem);
+//
+//        TSharedRef<SAssetTileItem> Item =
+//            SNew(SAssetTileItem)
+//            .AssetItem(AssetItem)
+//            .ItemWidth(this, &SAssetView::GetTileViewItemWidth)
+//            .OnRenameBegin(this, &SAssetView::AssetRenameBegin)
+//            .OnRenameCommit(this, &SAssetView::AssetRenameCommit)
+//            .OnVerifyRenameCommit(this, &SAssetView::AssetVerifyRenameCommit)
+//            .OnItemDestroyed(this, &SAssetView::AssetItemWidgetDestroyed)
+//            .ShouldAllowToolTip(this, &SAssetView::ShouldAllowToolTips)
+//            .HighlightText(HighlightedText)
+//            .IsSelected(FIsSelected::CreateSP(TableRowWidget.Get(), &STableRow<TSharedPtr<FAssetViewItem>>::IsSelectedExclusively));
+//
+//        TableRowWidget->SetContent(Item);
+//
+//        return TableRowWidget.ToSharedRef();
+//    }
+//    else
+//    {
+//        TSharedPtr<FAssetThumbnail>& AssetThumbnail = RelevantThumbnails.FindOrAdd(AssetItem);
+//        if (!AssetThumbnail)
+//        {
+//            const float ThumbnailResolution = TileViewThumbnailResolution;
+//            AssetThumbnail = MakeShared<FAssetThumbnail>(FAssetData(), ThumbnailResolution, ThumbnailResolution, AssetThumbnailPool);
+//            AssetItem->GetItem().UpdateThumbnail(*AssetThumbnail);
+//            AssetThumbnail->GetViewportRenderTargetTexture(); // Access the texture once to trigger it to render
+//        }
+//
+//        TSharedPtr< STableRow<TSharedPtr<FAssetViewItem>> > TableRowWidget;
+//        SAssignNew(TableRowWidget, STableRow<TSharedPtr<FAssetViewItem>>, OwnerTable)
+//            .Style(FEditorStyle::Get(), "ContentBrowser.AssetListView.TableRow")
+//            .Cursor(bAllowDragging ? EMouseCursor::GrabHand : EMouseCursor::Default)
+//            .OnDragDetected(this, &SAssetView::OnDraggingAssetItem);
+//
+//        TSharedRef<SAssetTileItem> Item =
+//            SNew(SAssetTileItem)
+//            .AssetThumbnail(AssetThumbnail)
+//            .AssetItem(AssetItem)
+//            .ThumbnailPadding(TileViewThumbnailPadding)
+//            .ItemWidth(this, &SAssetView::GetTileViewItemWidth)
+//            .OnRenameBegin(this, &SAssetView::AssetRenameBegin)
+//            .OnRenameCommit(this, &SAssetView::AssetRenameCommit)
+//            .OnVerifyRenameCommit(this, &SAssetView::AssetVerifyRenameCommit)
+//            .OnItemDestroyed(this, &SAssetView::AssetItemWidgetDestroyed)
+//            .ShouldAllowToolTip(this, &SAssetView::ShouldAllowToolTips)
+//            .HighlightText(HighlightedText)
+//            .ThumbnailEditMode(this, &SAssetView::IsThumbnailEditMode)
+//            .ThumbnailLabel(ThumbnailLabel)
+//            .ThumbnailHintColorAndOpacity(this, &SAssetView::GetThumbnailHintColorAndOpacity)
+//            .AllowThumbnailHintLabel(AllowThumbnailHintLabel)
+//            .IsSelected(FIsSelected::CreateSP(TableRowWidget.Get(), &STableRow<TSharedPtr<FAssetViewItem>>::IsSelectedExclusively))
+//            .OnIsAssetValidForCustomToolTip(OnIsAssetValidForCustomToolTip)
+//            .OnGetCustomAssetToolTip(OnGetCustomAssetToolTip)
+//            .OnVisualizeAssetToolTip(OnVisualizeAssetToolTip)
+//            .OnAssetToolTipClosing(OnAssetToolTipClosing);
+//
+//        TableRowWidget->SetContent(Item);
+//
+//        return TableRowWidget.ToSharedRef();
+//    }
+//}
+
 void SMatTabPanel::SetCSVPath(const FString& Directory) {
     IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
     if (PlatformFile.DirectoryExists(*Directory)) {
@@ -239,15 +363,15 @@ bool SMatTabPanel::CanChangeMat() const
     {
         SetupAssetRegistryCallbacks();
         BuildBasicMaterialTree();
-    }*/    
-
+    }*/   
     return SMatTabPanel::isSceneFolderValid();
 }
 
 void SMatTabPanel::LoadData() {
     MatComparer.AssetMeshes = MatComparer.GetDatasmithGeometries(FName(SMatTabPanel::GetGeometriesPath()));
     MatComparer.AssetMats = MatComparer.GetDatasmithMaterials(FName(SMatTabPanel::GetMaterialsPath()));
-    MatComparer.UnrealMats = MatComparer.GetUEMaterials();
+    MatComparer.DictionaryMats = MatComparer.GetUEMaterials("DICTIONARY");
+    MatComparer.SceneMats = MatComparer.GetUEMaterials("SCENE");
     MatComparer.RealUnrealMats = MatComparer.GetDatasmithMaterials(FName(SMatTabPanel::GetUnrealLibraryPath()));
 }
 
@@ -271,6 +395,240 @@ void SMatTabPanel::SetCurrentFolderPath(const FString& Directory) {
             const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(TEXT("Wrong Folder")));
         }
     }
+}
+
+
+FReply SMatTabPanel::VisualizeButtonPressed()
+{
+    SMatTabPanel::LoadData();
+    Items.Empty();
+
+    for (auto uetablemat : MatComparer.SceneMats) {
+        //Adds a new item to the array (do whatever you want with this)
+
+        TArray<UMaterialInterface*> assetmat = MatComparer.AssetMats.FilterByPredicate([&](UMaterialInterface* assetMat) {
+            return MatComparer.MatNameCheck(*assetMat, *uetablemat);
+            });
+        TArray<UMaterialInterface*> matchedmat = MatComparer.RealUnrealMats.FilterByPredicate([&](const UMaterialInterface* ulibMat) {
+            return ulibMat->GetFName() == uetablemat->UMaterialMatch;
+            });
+
+        if (assetmat.Num() > 0) {
+           
+            UMaterialInterface* mat = assetmat.Pop();
+            FAssetData AssetData = FAssetData(mat);  
+            const uint32 ThumbnailResolution = 64;
+            TSharedPtr<FAssetThumbnail> Thumbnail = MakeShareable(new FAssetThumbnail(AssetData, ThumbnailResolution, ThumbnailResolution, ThumbnailPool));
+
+
+            if (matchedmat.Num() > 0) { //There's an exact match from dictionary
+                UMaterialInterface* matchmat = matchedmat.Pop();
+                FAssetData MatchedAssetData = FAssetData(matchmat);
+                TSharedPtr<FAssetThumbnail> matchedThumbnail = MakeShareable(new FAssetThumbnail(MatchedAssetData, ThumbnailResolution, ThumbnailResolution, ThumbnailPool));
+                
+                //TODO: show CHECK if matched mat is the same or not!!!!! not show all table show materials that will be swapped!
+
+                TSharedPtr<FMatItem> NewItem = MakeShareable(new FMatItem(mat->GetPathName(), Thumbnail, matchmat->GetPathName(), matchedThumbnail, true));
+                Items.Add(NewItem);
+            }
+            else { //no dictionary entry
+                //TODO: try showing suggestions when no match is found!
+                //TODO: show if matched mat is the same or not!!!!! not show all table show materials that will be swapped!
+
+                //Get suggestions for closest maxmats materials in dictionnary
+                TArray<UEMatComparer*> suggestions = MatComparer.GetUEMatSuggestions(mat, MatComparer.DictionaryMats);
+
+                //Find the matched unreal material related to the first suggestion
+                if (suggestions.Num() > 0) {
+                    UEMatComparer* firstsuggest = suggestions[0];
+                    TArray<UMaterialInterface*> suggestedmat = MatComparer.RealUnrealMats.FilterByPredicate([&](const UMaterialInterface* ulibMat) {
+                        return ulibMat->GetFName() == firstsuggest->UMaterialMatch;
+                        });
+
+                    UMaterialInterface* matchmat = nullptr;
+                    if (suggestedmat.Num() > 0) {
+                        matchmat = suggestedmat.Pop();
+                    }
+                    else {
+                        for (auto othersugg : suggestions) {
+                            TArray<UMaterialInterface*> suggestedmats = MatComparer.RealUnrealMats.FilterByPredicate([&](const UMaterialInterface* ulibMat) {
+                                return ulibMat->GetFName() == othersugg->UMaterialMatch;
+                                });
+                            if (suggestedmats.Num() > 0) {
+                                matchmat = suggestedmats.Pop();
+                                break;
+                            }
+                        }
+                    }
+
+                    if (matchmat) {
+                        FAssetData MatchedAssetData = FAssetData(matchmat);
+                        TSharedPtr<FAssetThumbnail> matchedThumbnail = MakeShareable(new FAssetThumbnail(MatchedAssetData, ThumbnailResolution, ThumbnailResolution, ThumbnailPool));
+                        TSharedPtr<FMatItem> NewItem = MakeShareable(new FMatItem(mat->GetPathName(), Thumbnail, matchmat->GetPathName(), matchedThumbnail, false));
+                        Items.Add(NewItem);
+                    }   
+                }
+
+            }
+            
+        } 
+
+    }
+ 
+    // Update the listview
+    ListViewWidget->RequestListRefresh();
+    return FReply::Handled();
+}
+
+FReply SMatTabPanel::FilterButtonPressed() {
+    SMatTabPanel::LoadData();
+    Items = Items.FilterByPredicate([](TSharedPtr<FMatItem> item) {
+        return item->isExactMatch; });
+
+    // Update the listview
+    ListViewWidget->RequestListRefresh();
+    return FReply::Handled();
+}
+//TSharedRef<ITableRow> SMatTabPanel::OnGenerateSuggestions(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable){
+//
+//}
+
+TSharedRef<ITableRow> SMatTabPanel::OnGenerateRowForList(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable)
+{
+    if (!ensure(Item.IsValid()))
+    {
+        return SNew(STableRow<TSharedPtr<FMatItem>>, OwnerTable);
+    }
+
+    const uint32 ThumbnailResolution = 64;
+    const uint32 ThumbnailBoxPadding = 4;
+    UObject* ListObject = FindObject<UObject>(NULL, *Item->ObjectPath);
+    FAssetData ListAssetData(ListObject);
+    
+    UObject* MatchedListObject = FindObject<UObject>(NULL, *Item->MatchObjectPath);
+    FAssetData MatchedListAssetData(MatchedListObject);
+
+    FAssetThumbnailConfig ThumbnailConfig;
+    ThumbnailConfig.bAllowFadeIn = true;
+
+    return SNew(STableRow<TSharedPtr<FMatItem>>, OwnerTable)
+            .Style(FEditorStyle::Get(), "ContentBrowser.AssetListView.TableRow")
+            [
+                SNew(SUniformGridPanel)
+                .SlotPadding(2)
+                + SUniformGridPanel::Slot(0, 0)
+                [
+                    SNew(SHorizontalBox)
+                    // Viewport
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .VAlign(VAlign_Center)
+                    [
+                        SNew(SBox)
+                        .WidthOverride(ThumbnailResolution + ThumbnailBoxPadding * 2)
+                        .HeightOverride(ThumbnailResolution + ThumbnailBoxPadding * 2)
+                        [
+                            // Drop shadow border
+                            SNew(SBorder)
+                            .Padding(ThumbnailBoxPadding)
+                            .BorderImage(FEditorStyle::GetBrush("ContentBrowser.ThumbnailShadow"))
+                            [
+                                Item->Thumbnail->MakeThumbnailWidget(ThumbnailConfig)
+                            ]
+                        ]
+                    ]
+                    + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .Padding(6, 0, 0, 0)
+                        .VAlign(VAlign_Center)
+                        [
+                            SNew(SVerticalBox)
+                            + SVerticalBox::Slot()
+                            .AutoHeight()
+                            .Padding(0, 1)
+                            [
+                                SNew(STextBlock)
+                                .Font(FEditorStyle::GetFontStyle("ContentBrowser.AssetTileViewNameFont"))
+                                .Text(FText::FromName(ListAssetData.AssetName))
+                            ]
+
+                            + SVerticalBox::Slot()
+                            .AutoHeight()
+                            .Padding(0, 1)
+                            [
+                                // Class
+                                SNew(STextBlock)
+                                .Font(FEditorStyle::GetFontStyle("ContentBrowser.AssetListViewClassFont"))
+                                .Text(FText::FromString("Datasmith Material"))
+                            ]
+                        ]
+                ]
+                + SUniformGridPanel::Slot(1, 0)
+                [
+                    SNew(SHorizontalBox)
+                    +SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .Padding(10, 0, 0, 0)
+                    .VAlign(VAlign_Center)
+                    [
+                        SNew(SBox)
+                        .WidthOverride(ThumbnailResolution + ThumbnailBoxPadding * 2)
+                        .HeightOverride(ThumbnailResolution + ThumbnailBoxPadding * 2)
+                        [
+                            // Drop shadow border
+                            SNew(SBorder)
+                            .Padding(ThumbnailBoxPadding)
+                            .BorderImage(FEditorStyle::GetBrush("ContentBrowser.ThumbnailShadow"))
+                            [
+                                 Item->MatchThumbnail->MakeThumbnailWidget(ThumbnailConfig)
+                            ]
+                        ]
+                    ]
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .Padding(6, 0, 0, 0)
+                    .VAlign(VAlign_Center)
+                    [
+                        SNew(SVerticalBox)
+                        + SVerticalBox::Slot()
+                        .AutoHeight()
+                        .Padding(0, 1)
+                        [
+                            SNew(STextBlock)
+                            .Font(FEditorStyle::GetFontStyle("ContentBrowser.AssetTileViewNameFont"))
+                            .Text(FText::FromName(MatchedListAssetData.AssetName))
+                        ]
+
+                        + SVerticalBox::Slot()
+                        .AutoHeight()
+                        .Padding(0, 1)
+                        [
+                            // Class
+                            SNew(STextBlock)
+                            .Font(FEditorStyle::GetFontStyle("ContentBrowser.AssetListViewClassFont"))
+                            .Text(FText::FromString("UnrealLib Material"))
+                        ]
+                    ]
+                ]
+                + SUniformGridPanel::Slot(2, 0)
+                [
+                    SNew(SHorizontalBox)
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .Padding(10, 0, 0, 0)
+                    .VAlign(VAlign_Center)
+                    [
+                        SNew(STextBlock)
+                        .Font(FEditorStyle::GetFontStyle("ContentBrowser.AssetListViewClassFont"))
+                        .Text(FText::FromString(SMatTabPanel::GetTypeOfMatch(Item)))
+                    ]
+                ]
+        ];
+    
+}
+
+FString SMatTabPanel::GetTypeOfMatch(TSharedPtr<FMatItem> Item) {
+    return Item->isExactMatch ? "Exact Match" : "Suggestion";
 }
 
 #undef LOCTEXT_NAMESPACE
