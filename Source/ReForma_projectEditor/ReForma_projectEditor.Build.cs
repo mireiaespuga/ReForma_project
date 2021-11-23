@@ -21,7 +21,8 @@ public class ReForma_projectEditor : ModuleRules
                 "BlueprintGraph",
                 "AnimGraph",
                 "ComponentVisualizers",
-                "ReForma_project"
+                "ReForma_project",
+                "DatasmithContent"
         }
         );
 

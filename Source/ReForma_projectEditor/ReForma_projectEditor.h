@@ -7,6 +7,9 @@
 #include "Editor/PropertyEditor/Public/PropertyEditing.h"
 #include "IAssetTypeActions.h"
 #include "IReFormaModuleInterface.h"
+#include "Developer/AssetTools/Public/IAssetTools.h"
+#include "Developer/AssetTools/Public/AssetToolsModule.h"
+
 
 class FReForma_projectEditor : public IReFormaModuleInterface
 {
@@ -35,7 +38,7 @@ public:
 protected:
     TSharedPtr<FExtensibilityManager> LevelEditorMenuExtensibilityManager;
     TSharedPtr<FExtender> MenuExtender;
-
+    TArray<TSharedPtr<IAssetTypeActions>> CreatedAssetTypeActions;
     static TSharedRef<FWorkspaceItem> MenuRoot;
     FString sceneFolderName = "NONE_folderNoValid";
 

@@ -50,7 +50,8 @@ public:
     virtual TArray<UDataTable*> GetDataTables(FName Path);
     virtual void ParseString(FString text, const FString type, UEMatComparer& uemat);
     virtual void GenerateCSVwMaxMaterials(FString SavePath, TArray<UMaterialInterface*> AssetMats);
-    virtual FString MaxMatToFTableMat(UMaterialInterface* maxmat, int it);
+    virtual FString MaxMatToFTableMat(UMaterialInterface* maxmat, int it, FTableMaterial*& intablemat);
+    virtual bool AddMaterialToDict(UMaterialInterface* assetToImport);
 
     virtual bool MatNameCheck(UMaterialInterface& maxmat, UEMatComparer& uemat);
     virtual float TextureCheck(UMaterialInterface& maxmat, UEMatComparer& uemat, bool exactMatch = false);

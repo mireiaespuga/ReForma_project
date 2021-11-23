@@ -71,7 +71,7 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
                             .OnDirectoryChanged(this, &SMatTabPanel::SetCurrentFolderPath)
                         ]
                     ]
-                     + SVerticalBox::Slot()
+                  /*   + SVerticalBox::Slot()
                      .AutoHeight()
                      .Padding(0.f, 5.f, 0.f, 0.f)
                     [
@@ -105,7 +105,7 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
                                 .IsEnabled(this, &SMatTabPanel::CanGenerateCSV)
                                 .ToolTipText(FText::FromString("Generate CSV from datasmith materials"))
                             ]
-                    ]
+                    ]*/
                     + SVerticalBox::Slot()
                         .AutoHeight()
                         .Padding(0.f, 5.f, 0.f, 0.f)

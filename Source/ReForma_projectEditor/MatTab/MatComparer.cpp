@@ -231,7 +231,6 @@ float FMatComparer::ScalarParamsCheck(UMaterialInterface& maxmat, UEMatComparer&
         noScal = true;
     }
     
-
     for (auto p : ScalarParamsMax) {
         
         if (maxmat.GetScalarParameterValue(p, pmaxvalue)) {
@@ -391,11 +390,12 @@ TArray<UEMatComparer*> FMatComparer::GetUEMatSuggestions(UMaterialInterface* rea
 
 void FMatComparer::GenerateCSVwMaxMaterials(const FString SavePath, TArray<UMaterialInterface*> Assetmats) {
     
+    FTableMaterial* t;
     FString CSV(TEXT(",MaterialName,UMaterialMatch,FatherName,TextureNames,ScalarParamValues,VectorParamValues, "));
     
     CSV.Append("\n");
     for (size_t it = 0; it < Assetmats.Num(); it++){
-        CSV.Append(FMatComparer::MaxMatToFTableMat(Assetmats[it], it+1));
+        CSV.Append(FMatComparer::MaxMatToFTableMat(Assetmats[it], it+1, t));
         if (it == 15) break; //TODO: remove
     }
     
@@ -414,7 +414,28 @@ void FMatComparer::GenerateCSVwMaxMaterials(const FString SavePath, TArray<UMate
     
 }
 
-FString FMatComparer::MaxMatToFTableMat(UMaterialInterface* maxmat, int it) {
+bool FMatComparer::AddMaterialToDict(UMaterialInterface* assetToImport) {
+    UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
+    FName lastRowIndex = UETable->GetRowNames().Last();
+
+    FMatComparer::DictionaryMats = FMatComparer::GetUEMaterials("DICTIONARY");
+    UEMatComparer* matched = FMatComparer::GetUeMatMatch(assetToImport, FMatComparer::DictionaryMats);
+
+    if (!matched) { //there's no entry in table
+        int newname = FCString::Atoi(*lastRowIndex.ToString()) + 1;
+
+        FTableMaterial* tablemat = new FTableMaterial();
+        FString outText = FMatComparer::MaxMatToFTableMat(assetToImport, FCString::Atoi(*lastRowIndex.ToString()) + 1, tablemat);
+
+        UETable->RowStruct = FTableMaterial::StaticStruct();
+        UETable->AddRow(FName(FString::FromInt(newname)), *tablemat);
+        FMatComparer::DictionaryTable = UETable;
+        return true;
+    }
+    return false;
+}
+
+FString FMatComparer::MaxMatToFTableMat(UMaterialInterface* maxmat, int it, FTableMaterial*& intablemat) {
     FString fathername = maxmat->GetBaseMaterial()->GetFName().ToString();
     FString materialname = maxmat->GetFName().ToString();
     FString scalarparams = "";
@@ -481,7 +502,12 @@ FString FMatComparer::MaxMatToFTableMat(UMaterialInterface* maxmat, int it) {
         }
     }
 
-    //FTableMaterial* tablemat = new FTableMaterial(materialname, fathername, texparams, scalarparams, vecparams);
+    intablemat->MaterialName = materialname;
+    intablemat->FatherName = fathername;
+    intablemat->ScalarParamValues = scalarparams;
+    intablemat->VectorParamValues = vecparams;
+    intablemat->TextureNames = texparams;
+
     return (FString::FromInt(it) + "," + materialname + "," + ""  + "," + fathername + "," + texparams + "," + scalarparams + "," + vecparams + "\n");
 }
 
