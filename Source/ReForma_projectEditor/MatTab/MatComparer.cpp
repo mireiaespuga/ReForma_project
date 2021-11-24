@@ -94,9 +94,6 @@ TArray < UDataTable*> FMatComparer::GetDataTables(FName Path) {
 
 TArray<UEMatComparer*> FMatComparer::GetUEMaterials(const FString type) {
 
-    /*UDataTable* UETable = (FMatComparer::GetDataTables(Path).FilterByPredicate([](UDataTable* asset) {
-        return asset->GetFName().ToString().Contains(TEXT("MaxMats"));
-        }).Pop());*/ 
     TArray<UEMatComparer*> UEMats;
     if (type == "DICTIONARY") {
         UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
@@ -135,8 +132,6 @@ TArray<UEMatComparer*> FMatComparer::GetUEMaterials(const FString type) {
     
     return UEMats;
 }
-
-
 
 //bool MaterialComparer(UMaterial& mat1, UMaterial& mat2) {
 //
@@ -406,7 +401,7 @@ void FMatComparer::GenerateCSVwMaxMaterials(const FString SavePath, TArray<UMate
 
     if (!PlatformFile.FileExists(*FPaths::ConvertRelativePathToFull(*FilePath))) { //If file that was created doesn't exist
         const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(TEXT("Something went wrong... CSV couldn't be created.")));
-    } 
+    }  
     
     UETable->CreateTableFromCSVString(CSV);
     FMatComparer::DictionaryTable = UETable;
@@ -416,11 +411,11 @@ void FMatComparer::GenerateCSVwMaxMaterials(const FString SavePath, TArray<UMate
 
 bool FMatComparer::AddMaterialToDict(UMaterialInterface* assetToImport) {
     UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
-    FName lastRowIndex = UETable->GetRowNames().Last();
+    FName lastRowIndex = UETable->GetRowNames().Num() > 0 ? UETable->GetRowNames().Last() : FName("0");
 
     FMatComparer::DictionaryMats = FMatComparer::GetUEMaterials("DICTIONARY");
     UEMatComparer* matched = FMatComparer::GetUeMatMatch(assetToImport, FMatComparer::DictionaryMats);
-
+ 
     if (!matched) { //there's no entry in table
         int newname = FCString::Atoi(*lastRowIndex.ToString()) + 1;
 
@@ -514,27 +509,3 @@ FString FMatComparer::MaxMatToFTableMat(UMaterialInterface* maxmat, int it, FTab
 #undef LOCTEXT_NAMESPACE
 
 
-/*UDataTable* UETable = (FMatComparer::GetDataTables(TablePath).FilterByPredicate([](UDataTable* asset) {
-        return asset->GetFName().ToString().Contains(TEXT("MaxMats"));
-        }).Pop());
-        //UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
-        //UETable->RowStruct = FTableMaterial::StaticStruct();
-        //if (!UETable ||!UETable->GetRowStruct()->IsChildOf(FTableMaterial::StaticStruct())){
-
-        //    GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, UETable->GetRowStruct()->GetFName().ToString());
-        //    return;
-
-        //}
-        //UETable->Modify();
-        ////FTableMaterial* tablemat = new FTableMaterial(maxmat->GetFName().ToString(), "", "", "", "");
-        //FName NewName = DataTableUtils::MakeValidName(TEXT("NewRow"));
-        //const TArray<FName> ExisitngNames = UETable->GetRowNames();
-        //while (ExisitngNames.Contains(NewName))
-        //{
-        //    NewName.SetNumber(NewName.GetNumber() + 1);
-        //}
-        //FDataTableEditorUtils::AddRow(UETable, NewName);
-
-        //FString ContextString;
-        //FTableMaterial* data = UETable->FindRow<FTableMaterial>(NewName, ContextString);
-*/
