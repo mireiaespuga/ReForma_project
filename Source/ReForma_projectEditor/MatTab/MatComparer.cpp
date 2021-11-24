@@ -317,6 +317,8 @@ void FMatComparer::SetUeMatMatch(UMaterialInterface* realuemat, UEMatComparer*& 
 }
 
 void FMatComparer::SwapMaterials() {
+    bool bSomethingChanged = false;
+    int matSwaps = 0;
     // For each mesh in the Datasmith geometries
     for (auto mesh : FMatComparer::AssetMeshes)
     {
@@ -329,11 +331,13 @@ void FMatComparer::SwapMaterials() {
                 if (meshMat)
                 {
                     //UEMatComparer* UEmaterialMatch = FMatComparer::GetUeMatMatch(meshMat, FMatComparer::DictionaryMats); //get match from maxMats table
-                    UEMatComparer* UEmaterialMatch = *FMatComparer::SceneMats.FindByPredicate([&](UEMatComparer* scenemat) {
+                    TArray<UEMatComparer*> UEmaterialMatchs = FMatComparer::SceneMats.FilterByPredicate([&](UEMatComparer* scenemat) {
                             return FMatComparer::MatNameCheck(*meshMat, *scenemat);
                         });
 
-                    if (UEmaterialMatch) { //if match exists
+                    if (UEmaterialMatchs.Num() >0) { //if match exists
+
+                        UEMatComparer* UEmaterialMatch = UEmaterialMatchs.Pop();
                         // find real unreal material which name matches the UMaterialMatch in the table
                         TArray<UMaterialInterface*> unrealLibMats = FMatComparer::RealUnrealMats.FilterByPredicate([&](const UMaterialInterface* realLibMat) {
                             return realLibMat->GetFName() == UEmaterialMatch->UMaterialMatch;
@@ -342,7 +346,11 @@ void FMatComparer::SwapMaterials() {
                         if (unrealLibMats.Num() > 0) {
                             UMaterialInterface* unrealLibMat = unrealLibMats.Pop();
                             //if match is found in unreal library, swap datasmith material for unrealLibMaterial
-                            if (unrealLibMat) mesh->SetMaterial(index, unrealLibMat);
+                            if (unrealLibMat) {
+                                mesh->SetMaterial(index, unrealLibMat);
+                                matSwaps++;
+                                bSomethingChanged = true;
+                            }
                         }
                     }
                     // Suggestions
@@ -355,7 +363,8 @@ void FMatComparer::SwapMaterials() {
             }
         }
     }
-    
+    if(bSomethingChanged) FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(FString::Printf(TEXT("Swap of %d material(s) was successful!"), matSwaps)));
+    else FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString((TEXT("No materials were swapped."))));
 }
 
 TArray<UEMatComparer*> FMatComparer::GetUEMatSuggestions(UMaterialInterface* realuemat, TArray<UEMatComparer*> mats) {

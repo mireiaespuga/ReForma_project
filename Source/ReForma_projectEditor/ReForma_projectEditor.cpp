@@ -17,16 +17,28 @@ void FReForma_projectEditor::AddModuleListeners()
 
 void AddAssetToDictionary(TArray< FAssetData > SelectedAssets) {
     FMatComparer MatComparer;
-
+    FString matname, errormats = "";
+    int addedMats = 0;
+    
     for (auto selected : SelectedAssets) {
         auto* asset = selected.GetAsset();
         UMaterialInterface* assetToImport = Cast<UMaterialInterface>(asset);
-        FString matname = assetToImport->GetFName().ToString();
+        matname = assetToImport->GetFName().ToString();
         if (!MatComparer.AddMaterialToDict(assetToImport)) {
-            const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(TEXT("Material: ") + matname + TEXT(" could not be added. \nMay already exist in dictionary")));
+            errormats.Append(matname + " , ");
         }else{
-            const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(TEXT("Material: ") + matname + TEXT(" was successfully added!")));
+            addedMats++;
         }
+    }
+
+    //feedback
+    if (addedMats > 0) {
+        if(addedMats == 1) FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(TEXT("Material: ") + matname + TEXT(" was successfully added!")));
+        else  FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(FString::Printf(TEXT("%d materials were added successfully!"), addedMats)));
+    }
+    else {
+        FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(TEXT("Material(s): ") + errormats + TEXT(" could not be added. \nMay already exist in dictionary")));
+
     }
 
 }
