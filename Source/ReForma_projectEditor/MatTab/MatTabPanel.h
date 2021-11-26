@@ -67,7 +67,10 @@ public:
 
     bool isCSVPathValid = false;
 
-    TArray<TSharedPtr<FMatItem>> Items;
+    TArray<TSharedPtr<FMatItem>> SuggestedItems;
+    TArray<TSharedPtr<FMatItem>> ExactItems;
+    TArray<TSharedPtr<FMatItem>> DisplayedItems;
+    float thr = 4.0;
 
     /* The actual UI list */
     TSharedPtr<SListView<TSharedPtr<FMatItem>>> ListViewWidget;
