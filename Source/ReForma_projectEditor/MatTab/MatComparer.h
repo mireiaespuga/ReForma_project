@@ -58,5 +58,5 @@ public:
     virtual float FatherCheck(UMaterialInterface& maxmat, UEMatComparer& uemat);
     virtual float ScalarParamsCheck(UMaterialInterface& maxmat, UEMatComparer& uemat, const float matchWeight, bool exactMatch = false);
     virtual float VectorParamsCheck(UMaterialInterface& maxmat, UEMatComparer& uemat, const float matchWeight, bool exactMatch = false);
-
+    virtual bool AcceptSuggestion(UMaterialInterface* realuemat, UEMatComparer* matchmat, float threshold);
 }; 

@@ -178,6 +178,18 @@ UEMatComparer* FMatComparer::GetUeMatMatch(UMaterialInterface* realMaxmat, TArra
 
 }
 
+bool FMatComparer::AcceptSuggestion(UMaterialInterface* realuemat, UEMatComparer* matchmat, float threshold) {
+    
+        // check exact paramaters match
+        float matches = FMatComparer::TextureCheck(*realuemat, *matchmat);
+        matches += FMatComparer::FatherCheck(*realuemat, *matchmat);
+        matches += FMatComparer::ScalarParamsCheck(*realuemat, *matchmat, 1.0);
+        matches += FMatComparer::VectorParamsCheck(*realuemat, *matchmat, 1.0);
+
+        if (matches > threshold) return true;
+        return false;
+}
+
 float FMatComparer::TextureCheck(UMaterialInterface& realuemat, UEMatComparer& maxmat, bool exactMatch) {
     float matches = 0.0f;
     TArray<UTexture*> TexMax;
@@ -363,8 +375,11 @@ void FMatComparer::SwapMaterials() {
             }
         }
     }
+
+    //feedback
     if(bSomethingChanged) FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(FString::Printf(TEXT("Swap of %d material(s) was successful!"), matSwaps)));
     else FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString((TEXT("No materials were swapped."))));
+
 }
 
 TArray<UEMatComparer*> FMatComparer::GetUEMatSuggestions(UMaterialInterface* realuemat, TArray<UEMatComparer*> mats) {
