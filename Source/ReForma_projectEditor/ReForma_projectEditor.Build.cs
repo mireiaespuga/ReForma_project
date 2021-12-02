@@ -44,8 +44,8 @@ public class ReForma_projectEditor : ModuleRules
             );
 
         // Uncomment if you are using Slate UI
-        PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore", "UMG", "InputCore" });
-        PublicDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore", "RHI", "RenderCore", "UMG" });
+        PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore", "UMG", "InputCore", "MySQLConnectorUE4Plugin" });
+        PublicDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore", "RHI", "RenderCore", "UMG", "MySQLConnectorUE4Plugin" });
 
         // Uncomment if you are using online features
         // PrivateDependencyModuleNames.Add("OnlineSubsystem");

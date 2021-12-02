@@ -1,5 +1,5 @@
 #pragma once
-
+#include  "mysql.h"
 #include "Modules/ModuleManager.h"
 #include "Widgets/Docking/SDockTab.h"
 #include "Widgets/Docking/SDockableTab.h"
@@ -12,7 +12,7 @@
 #include "CoreMinimal.h"
 #include "DataTableEditorUtils.h"
 #include "FTableMaterial.h"
-
+#include "../../../Plugins/MySQLConnectorUE4Plugin/Source/MySQLConnectorUE4Plugin/Public/MySQLDatabase.h"
 
 struct UEMatComparer {
     FName MaterialName;
@@ -32,6 +32,8 @@ class FMatComparer : public SCompoundWidget
 { 
 
 public:
+
+    UMySQLDatabase* db = NewObject<UMySQLDatabase>();
     TArray<UMaterialInterface*> AssetMats;
     TArray<UEMatComparer*> DictionaryMats;
     TArray<UEMatComparer*> SceneMats;
@@ -45,6 +47,9 @@ public:
     virtual TArray<UEMatComparer*> GetUEMatSuggestions(UMaterialInterface* realuemat, TArray<UEMatComparer*> mats);
     
     virtual TArray<UEMatComparer*> GetUEMaterials(const FString type);
+    virtual void initDB();
+    virtual int GetLastDictEntry();
+    virtual int GetLastRowIndex(UDataTable* table);
     virtual TArray<UStaticMesh*> GetDatasmithGeometries(FName Path);
     virtual TArray<UMaterialInterface*> GetDatasmithMaterials(FName Path);
     virtual TArray<UDataTable*> GetDataTables(FName Path);

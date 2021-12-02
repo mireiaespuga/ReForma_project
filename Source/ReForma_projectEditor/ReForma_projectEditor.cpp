@@ -1,30 +1,49 @@
 #include "ReForma_projectEditor.h"
 #include "IReFormaModuleInterface.h"
 #include "MatTab/MatTab.h"
+#include "DBTab/DBTab.h"
 #include "Editor/ContentBrowser/Public/ContentBrowserModule.h"
 #include "Editor/ContentBrowser/Public/IContentBrowserSingleton.h"
 #include "MatTab/MatComparer.h"
+#include "Framework/Docking/TabManager.h"
+#include "Widgets/Docking/SDockTab.h"
+#include "DataTableEditor/Public/DataTableEditorModule.h"
 
 IMPLEMENT_GAME_MODULE(FReForma_projectEditor, ReForma_projectEditor)
 TSharedRef<FWorkspaceItem> FReForma_projectEditor::MenuRoot = FWorkspaceItem::NewGroup(FText::FromString("Menu Root"));
-
+FMatComparer MatComparer_;
 
 void FReForma_projectEditor::AddModuleListeners()
 {
     // add tools later
     ModuleListeners.Add(MakeShareable(new MatTab));
+    ModuleListeners.Add(MakeShareable(new DBTab));
+}
+
+bool FReForma_projectEditor::CloseOpenTab() {
+
+    TSharedPtr<SDockTab> CurrentTab =  FGlobalTabmanager::Get()->GetActiveTab();
+    if (CurrentTab)
+    {
+        CurrentTab->RequestCloseTab();
+        FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(TEXT("IMPORTANT! Close all active tabs before reloading database.")));
+        return false;
+    }
+    else {
+        return true;
+    }
 }
 
 void AddAssetToDictionary(TArray< FAssetData > SelectedAssets) {
-    FMatComparer MatComparer;
+    
     FString matname, errormats = "";
     int addedMats = 0;
-    
+
     for (auto selected : SelectedAssets) {
         auto* asset = selected.GetAsset();
         UMaterialInterface* assetToImport = Cast<UMaterialInterface>(asset);
         matname = assetToImport->GetFName().ToString();
-        if (!MatComparer.AddMaterialToDict(assetToImport)) {
+        if (!MatComparer_.AddMaterialToDict(assetToImport)) {
             errormats.Append(matname + " , ");
         }else{
             addedMats++;
@@ -38,10 +57,16 @@ void AddAssetToDictionary(TArray< FAssetData > SelectedAssets) {
     }
     else {
         FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(TEXT("Material(s): ") + errormats + TEXT(" could not be added. \nMay already exist in dictionary")));
-
     }
 
 }
+
+void FReForma_projectEditor::InitializeDB(){ 
+    
+    if (IsAvailable()) {
+        MatComparer_.initDB(); //init db connection
+    }
+}  
 
 void PopulateFormaActionsMenu(FMenuBuilder& MenuBuilder, TArray<FAssetData> SelectedAssets) {
     MenuBuilder.AddMenuEntry(
@@ -49,6 +74,7 @@ void PopulateFormaActionsMenu(FMenuBuilder& MenuBuilder, TArray<FAssetData> Sele
         FText::FromString("Add material entry to dictionary "),
         FSlateIcon(FEditorStyle::GetStyleSetName(), "ContentBrowser.AssetActions.ReimportAsset"),
         FUIAction(FExecuteAction::CreateStatic(&AddAssetToDictionary, SelectedAssets), FCanExecuteAction()));
+   
 }
 
 
@@ -108,11 +134,8 @@ void FReForma_projectEditor::StartupModule()
 
         CBMenuExtenderDelegates.Add(FContentBrowserMenuExtender_SelectedAssets::CreateStatic(&OnExtendContentBrowserAssetSelectionMenu));
         ContentBrowserExtenderDelegateHandle = CBMenuExtenderDelegates.Last().GetHandle();
-        
+        if(IsAvailable()) FReForma_projectEditor::Get().InitializeDB();
     }
-
-    //TWeakPtr<IAssetTypeActions> Action = AssetTools.GetAssetTypeActionsForClass(UMaterialInterface::StaticClass());
-
     IReFormaModuleInterface::StartupModule();
 }
 
@@ -156,7 +179,9 @@ void FReForma_projectEditor::FillPulldownMenu(FMenuBuilder& menuBuilder)
     menuBuilder.AddMenuSeparator(FName("Materials"));
     menuBuilder.EndSection();
 
-    //menuBuilder.BeginSection("ExampleSection", FText::FromString("Section 2"));
-    //menuBuilder.AddMenuSeparator(FName("Section_2"));
-    //menuBuilder.EndSection();
+    menuBuilder.BeginSection("FormaSection", FText::FromString("Database"));
+    menuBuilder.AddMenuSeparator(FName("DataBase"));
+    menuBuilder.EndSection();
+
 }
+

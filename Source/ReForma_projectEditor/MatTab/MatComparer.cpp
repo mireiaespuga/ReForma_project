@@ -92,12 +92,101 @@ TArray < UDataTable*> FMatComparer::GetDataTables(FName Path) {
     return DataTables;
 }
 
+int FMatComparer::GetLastDictEntry() {
+    FString Query = "SELECT MAX(RowName) FROM MainMatDictionary;";
+    FMySQLConnectoreQueryResult resultQuery = FMatComparer::db->MySQLConnectorGetData(Query, FReForma_projectEditor::Get().getConnection());
+    return resultQuery.Success ? FCString::Atoi(*resultQuery.ResultRows[0].Fields[0].Value) : 0;
+}
+
+void FMatComparer::initDB() {
+    UMySQLConnection* cs = FMatComparer::db->MySQLInitConnection("localhost", "mespuga", "mespuga", "ReFormaDB");//"localhost", "root", "ReForma2021#!", "ReFormaDB");
+    UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
+    if (cs && UETable) {
+
+        //FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString((TEXT("No materials were swapped."))));
+
+        FReForma_projectEditor::Get().setConnection(cs);
+       
+        
+        FTableMaterial* tablemat = new FTableMaterial();
+        FTableMaterial* existingtablemat = new FTableMaterial();
+
+        UETable->RowStruct = FTableMaterial::StaticStruct();
+
+        FString Query = "SELECT * FROM MainMatDictionary";
+        FMySQLConnectoreQueryResult resultQuery = FMatComparer::db->MySQLConnectorGetData(Query, FReForma_projectEditor::Get().getConnection());
+        FString rowname, context;
+        TArray<FTableMaterial*> matsToRelocate;
+        int lastDictEntry = FMatComparer::GetLastDictEntry();
+        TArray<FName> rowsToDelete;
+
+
+        if (resultQuery.Success) {
+
+            //store artists materials in aux array
+            for (auto row : UETable->GetRowMap()) {
+                FTableMaterial* data = (FTableMaterial*)(row.Value);
+                if (!data->isMasterDictEntry) {
+                    matsToRelocate.Push(data);
+                }
+            }
+
+            UETable->EmptyTable();
+
+            for (auto res : resultQuery.ResultRows) {
+                for (FMySQLConnectorKeyValuePair field : res.Fields) {
+                    if (field.Key == "RowName") rowname = field.Value;
+                    if (field.Key == "MaterialName") tablemat->MaterialName = field.Value;
+                    if (field.Key == "UMaterialMatch") tablemat->UMaterialMatch = field.Value;
+                    if (field.Key == "FatherName") tablemat->FatherName = field.Value;
+                    if (field.Key == "TextureNames") tablemat->TextureNames = field.Value;
+                    if (field.Key == "ScalarParamValues") tablemat->ScalarParamValues = field.Value;
+                    if (field.Key == "VectorParamValues") tablemat->VectorParamValues = field.Value;
+                    tablemat->isMasterDictEntry = true;
+                }
+
+                UETable->AddRow(FName(rowname), *tablemat);
+                ////check if row already exists
+                //existingtablemat = UETable->FindRow<FTableMaterial>(FName(rowname), context);
+                //if (existingtablemat) { //if row exists        
+                //    GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Blue, rowname + "   " + existingtablemat->MaterialName);
+
+                //    if (existingtablemat != tablemat) { //we prioritize DB rowname --> relocate existing
+                //        UETable->RemoveRow(FName(rowname));
+                //        UETable->AddRow(FName(rowname), *tablemat);
+
+                //        //matsToRelocate.Push(existingtablemat);
+                //        int lastRowIndex = UETable->GetRowNames().Num() > 0 ? FCString::Atoi(*UETable->GetRowNames().Last().ToString()) : 0;
+                //        int newname = lastRowIndex + 1 < lastDictEntry + 1 ? lastDictEntry++ : lastRowIndex++;
+                //        UETable->AddRow(FName(FString::FromInt(newname)), *existingtablemat);
+                //    }
+                //}
+                //else {
+                //    UETable->AddRow(FName(rowname), *tablemat);
+                //}
+            }
+
+            for (auto relocMat : matsToRelocate) {  //we move artits' mats to another row
+                int lastRowIndex = FMatComparer::GetLastRowIndex(UETable);
+                int newname = lastRowIndex < lastDictEntry ? lastDictEntry + 1 : lastRowIndex + 1;
+                UETable->AddRow(FName(FString::FromInt(newname)), *relocMat);
+            }
+        }
+
+
+
+        FMatComparer::DictionaryTable = UETable;
+        //return resultQuery.Success;
+    }
+}
+
 TArray<UEMatComparer*> FMatComparer::GetUEMaterials(const FString type) {
 
     TArray<UEMatComparer*> UEMats;
     if (type == "DICTIONARY") {
         UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
         FMatComparer::DictionaryTable = UETable;
+
 
         for (auto it : UETable->GetRowMap())
         {
@@ -418,22 +507,45 @@ void FMatComparer::GenerateCSVwMaxMaterials(const FString SavePath, TArray<UMate
     
 }
 
+int FMatComparer::GetLastRowIndex(UDataTable* table) {
+    TArray<FName> rownames = table->GetRowNames();
+    rownames.Sort([](FName r1, FName r2) { return FCString::Atoi(*r1.ToString()) < FCString::Atoi(*r2.ToString()) /*r1.LexicalLess(r2)*/; });
+    return table->GetRowNames().Num() > 0 ? FCString::Atoi(*rownames.Last().ToString()) : 0;
+}
+
 bool FMatComparer::AddMaterialToDict(UMaterialInterface* assetToImport) {
     UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
-    FName lastRowIndex = UETable->GetRowNames().Num() > 0 ? UETable->GetRowNames().Last() : FName("0");
+    
+    int lastRowIndex = FMatComparer::GetLastRowIndex(UETable);
 
     FMatComparer::DictionaryMats = FMatComparer::GetUEMaterials("DICTIONARY");
     UEMatComparer* matched = FMatComparer::GetUeMatMatch(assetToImport, FMatComparer::DictionaryMats);
  
     if (!matched) { //there's no entry in table
-        int newname = FCString::Atoi(*lastRowIndex.ToString()) + 1;
-
+        
+        int lastDictEntry = FMatComparer::GetLastDictEntry();
+        int newname = lastRowIndex < lastDictEntry? lastDictEntry + 1 : lastRowIndex + 1;
         FTableMaterial* tablemat = new FTableMaterial();
-        FString outText = FMatComparer::MaxMatToFTableMat(assetToImport, FCString::Atoi(*lastRowIndex.ToString()) + 1, tablemat);
+        FString outText = FMatComparer::MaxMatToFTableMat(assetToImport, newname, tablemat);
 
         UETable->RowStruct = FTableMaterial::StaticStruct();
         UETable->AddRow(FName(FString::FromInt(newname)), *tablemat);
         FMatComparer::DictionaryTable = UETable;
+
+        //FString insertQuery = "INSERT INTO MainMatDictionary (RowName,MaterialName,UMaterialMatch,FatherName,TextureNames,ScalarParamValues,VectorParamValues)";
+        //insertQuery += "VALUES (";
+        //insertQuery += FString::FromInt(newname) + ",";
+        //insertQuery += "'" + tablemat->MaterialName + "'" + ",";
+        //insertQuery += "'" + tablemat->UMaterialMatch + "'" + ",";
+        //insertQuery += "'" + tablemat->FatherName + "'" + ",";
+        //insertQuery += "'" + tablemat->TextureNames + "'" + ",";
+        //insertQuery += "'" + tablemat->ScalarParamValues + "'" + ",";
+        //insertQuery += "'" + tablemat->VectorParamValues + "'" + ");";
+
+    /*    GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, insertQuery);
+        UE_LOG(LogTemp, Warning, TEXT("%s"), *insertQuery);
+        FMatComparer::db->MySQLConnectorExecuteQuery(insertQuery, FReForma_projectEditor::Get().getConnection());*/
+
         return true;
     }
     return false;

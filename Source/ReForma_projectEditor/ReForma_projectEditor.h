@@ -9,6 +9,7 @@
 #include "IReFormaModuleInterface.h"
 #include "Developer/AssetTools/Public/IAssetTools.h"
 #include "Developer/AssetTools/Public/AssetToolsModule.h"
+#include "../../Plugins/MySQLConnectorUE4Plugin/Source/MySQLConnectorUE4Plugin/Public/MySQLDatabase.h"
 
 
 class FReForma_projectEditor : public IReFormaModuleInterface
@@ -19,7 +20,9 @@ public:
     virtual void ShutdownModule() override;
 
     virtual void AddModuleListeners() override;
-
+    virtual void InitializeDB();
+    virtual bool CloseOpenTab();
+    
     static inline FReForma_projectEditor& Get()
     {
         return FModuleManager::LoadModuleChecked< FReForma_projectEditor >("ReForma_projectEditor");
@@ -34,13 +37,17 @@ public:
     TSharedRef<FWorkspaceItem> GetMenuRoot() { return MenuRoot; };
     FString GetFolderName() { return sceneFolderName; };
     void setFolderName(FString name) { sceneFolderName = name; };
+    void setConnection(UMySQLConnection* cs) { connection = cs; };
+    UMySQLConnection* getConnection() { return connection;  };
 
 protected:
     TSharedPtr<FExtensibilityManager> LevelEditorMenuExtensibilityManager;
     TSharedPtr<FExtender> MenuExtender;
-    TArray<TSharedPtr<IAssetTypeActions>> CreatedAssetTypeActions;
+    
     static TSharedRef<FWorkspaceItem> MenuRoot;
+    TArray<TSharedPtr<IAssetTypeActions>> CreatedAssetTypeActions;
     FString sceneFolderName = "NONE_folderNoValid";
+    UMySQLConnection* connection = NewObject<UMySQLConnection>();
 
     void MakePulldownMenu(FMenuBarBuilder& menuBuilder);
     void FillPulldownMenu(FMenuBuilder& menuBuilder);

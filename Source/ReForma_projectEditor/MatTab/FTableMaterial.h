@@ -15,7 +15,8 @@ struct FTableMaterial : public FTableRowBase
 public:
 
     FTableMaterial() {};
-
+    UPROPERTY(BlueprintReadWrite)
+        bool isMasterDictEntry = false;
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
         FString MaterialName;
     UPROPERTY(EditAnywhere, BlueprintReadWrite)

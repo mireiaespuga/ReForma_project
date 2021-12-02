@@ -5,7 +5,6 @@
 class MatTab : public FCustomTabToolBase
 {
 public:
-    virtual ~MatTab() {}
     virtual void OnStartupModule() override;
     virtual void OnShutdownModule() override;
     virtual void Initialize() override;
