@@ -13,6 +13,7 @@
 #include "DataTableEditorUtils.h"
 #include "FTableMaterial.h"
 #include "../../../Plugins/MySQLConnectorUE4Plugin/Source/MySQLConnectorUE4Plugin/Public/MySQLDatabase.h"
+#include "../DBTab/DBTab.h"
 
 struct UEMatComparer {
     FName MaterialName;
@@ -33,7 +34,6 @@ class FMatComparer : public SCompoundWidget
 
 public:
 
-    UMySQLDatabase* db = NewObject<UMySQLDatabase>();
     TArray<UMaterialInterface*> AssetMats;
     TArray<UEMatComparer*> DictionaryMats;
     TArray<UEMatComparer*> SceneMats;
@@ -48,7 +48,6 @@ public:
     
     virtual TArray<UEMatComparer*> GetUEMaterials(const FString type);
     virtual void initDB();
-    virtual int GetLastDictEntry();
     virtual int GetLastRowIndex(UDataTable* table);
     virtual TArray<UStaticMesh*> GetDatasmithGeometries(FName Path);
     virtual TArray<UMaterialInterface*> GetDatasmithMaterials(FName Path);

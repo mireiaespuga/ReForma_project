@@ -8,8 +8,10 @@
 #include "IAssetTypeActions.h"
 #include "IReFormaModuleInterface.h"
 #include "Developer/AssetTools/Public/IAssetTools.h"
+#include "Subsystems/AssetEditorSubsystem.h"
 #include "Developer/AssetTools/Public/AssetToolsModule.h"
 #include "../../Plugins/MySQLConnectorUE4Plugin/Source/MySQLConnectorUE4Plugin/Public/MySQLDatabase.h"
+#include "Interfaces/OnlineUserInterface.h"
 
 
 class FReForma_projectEditor : public IReFormaModuleInterface
@@ -21,7 +23,7 @@ public:
 
     virtual void AddModuleListeners() override;
     virtual void InitializeDB();
-    virtual bool CloseOpenTab();
+    virtual bool CloseOpenEditors();
     
     static inline FReForma_projectEditor& Get()
     {
@@ -39,6 +41,8 @@ public:
     void setFolderName(FString name) { sceneFolderName = name; };
     void setConnection(UMySQLConnection* cs) { connection = cs; };
     UMySQLConnection* getConnection() { return connection;  };
+    FString  GetUserID();
+    UMySQLDatabase* GetDB() { return db; };
 
 protected:
     TSharedPtr<FExtensibilityManager> LevelEditorMenuExtensibilityManager;
@@ -48,6 +52,7 @@ protected:
     TArray<TSharedPtr<IAssetTypeActions>> CreatedAssetTypeActions;
     FString sceneFolderName = "NONE_folderNoValid";
     UMySQLConnection* connection = NewObject<UMySQLConnection>();
+    UMySQLDatabase* db = NewObject<UMySQLDatabase>();
 
     void MakePulldownMenu(FMenuBarBuilder& menuBuilder);
     void FillPulldownMenu(FMenuBuilder& menuBuilder);

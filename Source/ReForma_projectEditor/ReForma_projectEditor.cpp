@@ -2,6 +2,7 @@
 #include "IReFormaModuleInterface.h"
 #include "MatTab/MatTab.h"
 #include "DBTab/DBTab.h"
+#include "Misc/Paths.h"
 #include "Editor/ContentBrowser/Public/ContentBrowserModule.h"
 #include "Editor/ContentBrowser/Public/IContentBrowserSingleton.h"
 #include "MatTab/MatComparer.h"
@@ -20,18 +21,48 @@ void FReForma_projectEditor::AddModuleListeners()
     ModuleListeners.Add(MakeShareable(new DBTab));
 }
 
-bool FReForma_projectEditor::CloseOpenTab() {
-
-    TSharedPtr<SDockTab> CurrentTab =  FGlobalTabmanager::Get()->GetActiveTab();
-    if (CurrentTab)
+bool FReForma_projectEditor::CloseOpenEditors() {
+    EAppReturnType::Type ReturnType = FMessageDialog::Open(EAppMsgType::OkCancel, EAppReturnType::Cancel, FText::FromString(TEXT("IMPORTANT! All editor tabs will be closed before reloading database. Save your changes beforehand. \n\n Do you want to continue?")));
+    
+    if (ReturnType == EAppReturnType::Ok)
     {
-        CurrentTab->RequestCloseTab();
-        FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(TEXT("IMPORTANT! Close all active tabs before reloading database.")));
-        return false;
-    }
-    else {
+        //FAssetEditorManager::Get().CloseAllAssetEditors();
+        GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->CloseAllAssetEditors();
         return true;
     }
+    else return false;
+    
+}
+
+FString FReForma_projectEditor::GetUserID() {
+    FString username, right;
+    bool result;
+    FString dir = FPaths::ProjectContentDir();
+    result = dir.Split(TEXT("Users/"), NULL, &right);
+    if (result) {
+        result = right.Split(TEXT("/"), &username, NULL);
+        username = username.Replace(TEXT(" "), TEXT(""));
+    }
+   
+
+    //APlayerController* const PlayerController = GEngine->GetWorld()->GetFirstPlayerController();
+    
+    //IOnlineUser* OnlineSub = IOnlineUser::GetAllUserInfo(FGenericPlatformMisc::GetEpicAccountId())
+    //if (OnlineSub)
+    //{
+    //    // Get the Session Interface to clear the Delegate
+    //    IOnlineUserPtr userint = OnlineSub->GetUserInterface();
+    //    if (userint.IsValid())
+    //    {
+    //        // Clear the delegate, since we are done with this call
+
+    //    }
+    //}
+    if (!result) {
+        FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(TEXT("Something went wrong with selecting user...")));
+        return "NONE";
+    }else return username.ToLower();
+    
 }
 
 void AddAssetToDictionary(TArray< FAssetData > SelectedAssets) {
@@ -64,6 +95,8 @@ void AddAssetToDictionary(TArray< FAssetData > SelectedAssets) {
 void FReForma_projectEditor::InitializeDB(){ 
     
     if (IsAvailable()) {
+        UMySQLConnection* cs = FReForma_projectEditor::Get().GetDB()->MySQLInitConnection("localhost", "mespuga", "mespuga", "ReFormaDB");//"localhost", "root", "ReForma2021#!", "ReFormaDB");
+        FReForma_projectEditor::Get().setConnection(cs);
         MatComparer_.initDB(); //init db connection
     }
 }  
@@ -134,6 +167,8 @@ void FReForma_projectEditor::StartupModule()
 
         CBMenuExtenderDelegates.Add(FContentBrowserMenuExtender_SelectedAssets::CreateStatic(&OnExtendContentBrowserAssetSelectionMenu));
         ContentBrowserExtenderDelegateHandle = CBMenuExtenderDelegates.Last().GetHandle();
+        
+
         if(IsAvailable()) FReForma_projectEditor::Get().InitializeDB();
     }
     IReFormaModuleInterface::StartupModule();

@@ -22,7 +22,9 @@ public class ReForma_projectEditor : ModuleRules
                 "AnimGraph",
                 "ComponentVisualizers",
                 "ReForma_project",
-                "DatasmithContent"
+                "DatasmithContent",
+
+
         }
         );
 
@@ -39,7 +41,8 @@ public class ReForma_projectEditor : ModuleRules
                 "MainFrame",
                 "PropertyEditor",
                 "ComponentVisualizers",
-                "ReForma_project"
+                "ReForma_project",
+                
             }
             );
 
@@ -48,7 +51,7 @@ public class ReForma_projectEditor : ModuleRules
         PublicDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore", "RHI", "RenderCore", "UMG", "MySQLConnectorUE4Plugin" });
 
         // Uncomment if you are using online features
-        // PrivateDependencyModuleNames.Add("OnlineSubsystem");
+        PrivateDependencyModuleNames.Add("OnlineSubsystem");
 
         // To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
     }

@@ -40,8 +40,6 @@ UMySQLConnection* UMySQLDatabase::MySQLInitConnection(FString Host, FString User
 	                        DatabaseNameString.c_str(),
 	                        0, nullptr, 0))
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 3, FColor::Cyan, mysql_error(cs->globalCon));
-
 		UE_LOG(LogTemp, Error, TEXT("MySQLInitConnection: Failed to Connect to Database!"));
 		UMySQLConnection::MySQLCloseConnection(cs);
 		return nullptr;
@@ -171,8 +169,10 @@ FMySQLConnectorTable UMySQLDatabase::CreateTable(const FString TableName,
 	//UE_LOG(LogMySQL_Database, Warning, TEXT("!!!%s"), *query);
 	//LogMySQL_Database2(Warning, *query);
 
+	//GEngine->AddOnScreenDebugMessage(-1, 3, FColor::Cyan, TEXT("MySQLConnector: ") + query);
+
 	t.Created = MySQLConnectorExecuteQuery(query, Connection);
-	UE_LOG(LogMySQL_Database, Warning, TEXT("%s"), *query);
+
 	return t;
 }
 
