@@ -31,8 +31,8 @@ public:
 
 
 
-void DBTab::InstertIntoDB(FString tablename, int newname, FTableMaterial* tablemat) {
-    if (tablename != "NONE") {
+void DBTab::InsertIntoDB(FString tablename, int newname, FTableMaterial* tablemat) {
+    if (tablename != "") {
         FString insertQuery = "INSERT INTO " + tablename + " (RowName, MaterialName, UMaterialMatch, FatherName, TextureNames, ScalarParamValues, VectorParamValues)";
         insertQuery += "VALUES (";
         insertQuery += FString::FromInt(newname) + ",";
@@ -54,7 +54,6 @@ int DBTab::GetLastDictEntry(FString tablename) {
 }
 
 FString DBTab::CreateArtistTable() {
-    UMySQLConnection* cs = FReForma_projectEditor::Get().GetDB()->MySQLInitConnection("localhost", "default_user", "Forma1235", "ReFormaDB");//"localhost", "root", "ReForma2021#!", "ReFormaDB");
     TArray<FMySQLConnectorTableField> Fields;
 
     bool bIsPk = true, bIsUnique = true, bIsNotNull = true;
@@ -67,31 +66,32 @@ FString DBTab::CreateArtistTable() {
     Fields.Push(FReForma_projectEditor::Get().GetDB()->MySQLConnectorVARCHAR("VectorParamValues", "500", !bIsPk, !bIsUnique, !bIsNotNull));
 
     FString user = FReForma_projectEditor::Get().GetUserID();
-    if (user != "NONE") {
-        FMySQLConnectorTable t = FReForma_projectEditor::Get().GetDB()->CreateTable(user, Fields, cs);
+    if (user != "") {
+        FMySQLConnectorTable t = FReForma_projectEditor::Get().GetDB()->CreateTable(user, Fields, FReForma_projectEditor::Get().getConnection());
+        FString query = "GRANT SELECT, UPDATE, DELETE, INSERT ON " + user + " TO `" + FReForma_projectEditor::Get().GetRole()+ "`@`%`;";
+        bool result = FReForma_projectEditor::Get().GetDB()->MySQLConnectorExecuteQuery(query, FReForma_projectEditor::Get().getConnection());
+
         return t.TableName;
     }
-    else return "NONE";
+    else return "";
 }
 
 void DBTab::loadArtistDB(UDataTable*& UETable) {
 
     TArray<FMySQLConnectorTableField> Fields;
-    UMySQLConnection* cs = FReForma_projectEditor::Get().GetDB()->MySQLInitConnection("localhost", "default_user", "Forma1235", "ReFormaDB");//"localhost", "root", "ReForma2021#!", "ReFormaDB");
-    if (cs && UETable) {
+    if (UETable) {
 
         FString user = FReForma_projectEditor::Get().GetUserID();
         /*FReForma_projectEditor::Get().setConnection(cs);*/
-        if (user != "NONE") {
+        if (user != "" && FReForma_projectEditor::Get().isArtist()) {
             DBTab::CreateArtistTable();     //If table does not exist create it
             FTableMaterial* tablemat = new FTableMaterial();
             FString Query = "SELECT * FROM " + user + ";";
-            FMySQLConnectoreQueryResult resultQuery = FReForma_projectEditor::Get().GetDB()->MySQLConnectorGetData(Query, cs);
+            FMySQLConnectoreQueryResult resultQuery = FReForma_projectEditor::Get().GetDB()->MySQLConnectorGetData(Query, FReForma_projectEditor::Get().getConnection());
             FString rowname, context;
             TArray<FName> rowsToDelete;
 
             if (resultQuery.Success) {
-
                 for (auto res : resultQuery.ResultRows) {
                     for (FMySQLConnectorKeyValuePair field : res.Fields) {
                         if (field.Key == "RowName") rowname = field.Value;
@@ -106,10 +106,9 @@ void DBTab::loadArtistDB(UDataTable*& UETable) {
 
                     UETable->AddRow(FName(rowname), *tablemat);
                 }
-            }
+            }else UE_LOG(LogTemp, Error, TEXT("%s"), *resultQuery.ErrorMessage);
 
-            GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Blue, FReForma_projectEditor::Get().GetUserID());
-        }
+       }
 
     }
 }
@@ -144,9 +143,46 @@ void DBTab::loadMasterDB(UDataTable*& UETable) {
     }
 }
 
+void DBTab::SaveArtistTable(const UDataTable* InDataTable, const FName InRowName) {
+   
+        if (InDataTable) {
+            
+            FString context;
+            FTableMaterial* row = InDataTable->FindRow<FTableMaterial>(InRowName, context);
+
+            if (row && !row->isMasterDictEntry && row->UMaterialMatch != "") { //UPDATE ARTIST ENTRY 
+                FString query = "UPDATE " + FReForma_projectEditor::Get().GetUserID() + " SET UMaterialMatch=";
+                query += "'" + row->UMaterialMatch + "'" + " WHERE RowName=" + InRowName.ToString() + ";";
+
+                bool result = FReForma_projectEditor::Get().GetDB()->MySQLConnectorExecuteQuery(query, FReForma_projectEditor::Get().getConnection());
+                //if (!result)  FReForma_projectEditor::Get().InitializeDB();
+            }
+            else if (row && row->isMasterDictEntry && row->UMaterialMatch != "") {
+                FString query = "UPDATE mainmatdictionary SET UMaterialMatch=";
+                query += "'" + row->UMaterialMatch + "'" + " WHERE RowName=" + InRowName.ToString() + ";";
+
+                bool result = FReForma_projectEditor::Get().GetDB()->MySQLConnectorExecuteQuery(query, FReForma_projectEditor::Get().getConnection());
+                //if (!result)  FReForma_projectEditor::Get().InitializeDB();
+            }
+            //else if (!row) { //DELETE ENTRY FROM DB
+
+            //    FString query = "DELETE FROM " + FReForma_projectEditor::Get().GetUserID();
+            //    query += "WHERE RowName = " + InRowName.ToString() + "; ";
+
+            //    FReForma_projectEditor::Get().GetDB()->MySQLConnectorExecuteQuery(query, cs); //FReForma_projectEditor::Get().getConnection());
+            //}
+            
+           
+        }
+}
+
 void DBTab::ReloadDBCommand() { 
     if (FReForma_projectEditor::Get().CloseOpenEditors()) {
+
+        //update and delete changes to artist table !
+
         FReForma_projectEditor::Get().InitializeDB();
+        
     }
 }
 

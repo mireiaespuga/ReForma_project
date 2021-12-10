@@ -311,7 +311,6 @@ void SMatTabPanel::SetCurrentFolderPath(const FString& Directory) {
         FString MaterialsFullPath = FPaths::ConvertRelativePathToFull(SMatTabPanel::GetInitialPath() + RightStr + "/Materials");
         if (PlatformFile.DirectoryExists(*GeometriesFullPath) && PlatformFile.DirectoryExists(*MaterialsFullPath)) {
             FReForma_projectEditor::Get().setFolderName(RightStr);
-            SMatTabPanel::LoadData();
         }
         else {
             const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(TEXT("Wrong Folder")));

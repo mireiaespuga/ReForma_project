@@ -1,7 +1,6 @@
 #pragma once
 
-#include "CoreMinimal.h"
-
+#include "ReForma_projectEditor/ReForma_projectEditor.h"
 #include "Engine/DataTable.h"
 #include "Engine/DataAsset.h"
 #include "FTableMaterial.generated.h"
@@ -12,7 +11,14 @@ struct FTableMaterial : public FTableRowBase
 {
     GENERATED_BODY()
 
+
 public:
+
+    #if WITH_EDITOR
+    virtual void OnDataTableChanged(const UDataTable* InDataTable, const FName InRowName) override {
+        FReForma_projectEditor::Get().CallSaveArtistDB(InDataTable, InRowName);
+    };
+    #endif
 
     FTableMaterial() {};
     UPROPERTY(BlueprintReadWrite)
@@ -29,7 +35,7 @@ public:
         FString ScalarParamValues;
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
         FString VectorParamValues;
-
+   
 
 };
 

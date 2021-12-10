@@ -11,12 +11,15 @@ class DBTab : public FCustomTabToolBase
     virtual void MakeMenuEntry_(FMenuBuilder& menuBuilder) ;
     
 public:
-    static void InstertIntoDB(FString tablename, int newname, FTableMaterial* tablemat);
+    static void InsertIntoDB(FString tablename, int newname, FTableMaterial* tablemat);
     static void loadArtistDB(UDataTable*& UETable);
     static void loadMasterDB(UDataTable*& UETable);
     static FString CreateArtistTable();
-    static int GetLastDictEntry(FString tablename);
     
+    static void SaveArtistTable(const UDataTable* InDataTable, const FName InRowName);
+    static int GetLastDictEntry(FString tablename);
+    TArray<FName> rowsToDelete;
+
 protected: 
     TSharedPtr<FUICommandList> CommandList = NULL;
     // UI Command functions

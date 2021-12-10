@@ -13,6 +13,18 @@
 #include "../../Plugins/MySQLConnectorUE4Plugin/Source/MySQLConnectorUE4Plugin/Public/MySQLDatabase.h"
 #include "Interfaces/OnlineUserInterface.h"
 
+struct UserInfo {
+    FString userId;
+    FString role;
+    FString permissions;
+    FString password;
+    
+    UserInfo() :
+        role(TEXT("default_user")),
+        permissions(TEXT("SELECT")),
+        password(TEXT("Forma1235"))
+    {}
+};
 
 class FReForma_projectEditor : public IReFormaModuleInterface
 {
@@ -40,13 +52,27 @@ public:
     FString GetFolderName() { return sceneFolderName; };
     void setFolderName(FString name) { sceneFolderName = name; };
     void setConnection(UMySQLConnection* cs) { connection = cs; };
-    UMySQLConnection* getConnection() { return connection;  };
-    FString  GetUserID();
+    UMySQLConnection* getConnection() { return connection;  };   
     UMySQLDatabase* GetDB() { return db; };
+    void CallSaveArtistDB(const UDataTable* InDataTable, const FName InRowName);
+    bool bCanUpdate = true;
+
+    bool LoadMe();
+    void SetMyRole(FString InRole) {  me->role = InRole;};
+    void SetMyUserId(FString InUserId) { me->userId = InUserId; };
+    void SetMyPermissions(FString InPerm) { me->permissions = InPerm; };
+    void SetMyPSWRD(FString InPass) { me->password = InPass; };
+    FString GetUserID() { return me->userId; };
+    FString GetRole() { return me->role; };
+    FString GetPSWRD() { return me->password; };
+    FString GetPerm() { return me->permissions; };
+    bool isArtist() { return me->role == "default_user"; };
+    
 
 protected:
     TSharedPtr<FExtensibilityManager> LevelEditorMenuExtensibilityManager;
     TSharedPtr<FExtender> MenuExtender;
+    UserInfo* me = new UserInfo();
     
     static TSharedRef<FWorkspaceItem> MenuRoot;
     TArray<TSharedPtr<IAssetTypeActions>> CreatedAssetTypeActions;
