@@ -116,10 +116,10 @@ void DBTab::loadArtistDB(UDataTable*& UETable) {
 void DBTab::loadMasterDB(UDataTable*& UETable) {
 
     FTableMaterial* tablemat = new FTableMaterial();
-    FString Query = "SELECT * FROM MainMatDictionary";
+    FString Query = "SELECT * FROM masterdictionary";
     FMySQLConnectoreQueryResult resultQuery = FReForma_projectEditor::Get().GetDB()->MySQLConnectorGetData(Query, FReForma_projectEditor::Get().getConnection());
     FString rowname, context;
-    int lastDictEntry = DBTab::GetLastDictEntry("MainMatDictionary");
+    int lastDictEntry = DBTab::GetLastDictEntry("masterdictionary");
     TArray<FName> rowsToDelete;
 
     if (resultQuery.Success) {
@@ -158,7 +158,7 @@ void DBTab::SaveArtistTable(const UDataTable* InDataTable, const FName InRowName
                 //if (!result)  FReForma_projectEditor::Get().InitializeDB();
             }
             else if (row && row->isMasterDictEntry && row->UMaterialMatch != "") {
-                FString query = "UPDATE mainmatdictionary SET UMaterialMatch=";
+                FString query = "UPDATE masterdictionary SET UMaterialMatch=";
                 query += "'" + row->UMaterialMatch + "'" + " WHERE RowName=" + InRowName.ToString() + ";";
 
                 bool result = FReForma_projectEditor::Get().GetDB()->MySQLConnectorExecuteQuery(query, FReForma_projectEditor::Get().getConnection());

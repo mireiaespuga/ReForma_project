@@ -449,7 +449,7 @@ bool FMatComparer::AddMaterialToDict(UMaterialInterface* assetToImport) {
     if (!matched) { //there's no entry in table
         
         FReForma_projectEditor::Get().bCanUpdate = false;
-        int lastDictEntry = FGenericPlatformMath::Max(DBTab::GetLastDictEntry("MainMatDictionary"), DBTab::GetLastDictEntry(FReForma_projectEditor::Get().GetUserID()));
+        int lastDictEntry = FGenericPlatformMath::Max(DBTab::GetLastDictEntry("masterdictionary"), DBTab::GetLastDictEntry(FReForma_projectEditor::Get().GetUserID()));
         int newname = lastRowIndex < lastDictEntry ? lastDictEntry + 1 : lastRowIndex + 1;
         FTableMaterial* tablemat = new FTableMaterial();
         FString outText = FMatComparer::MaxMatToFTableMat(assetToImport, newname, tablemat);
@@ -458,7 +458,7 @@ bool FMatComparer::AddMaterialToDict(UMaterialInterface* assetToImport) {
         UETable->AddRow(FName(FString::FromInt(newname)), *tablemat);
         FMatComparer::DictionaryTable = UETable;
        
-        DBTab::InsertIntoDB(FReForma_projectEditor::Get().isArtist() ? FReForma_projectEditor::Get().GetUserID() : "MainMatDictionary", newname, tablemat);
+        DBTab::InsertIntoDB(FReForma_projectEditor::Get().isArtist() ? FReForma_projectEditor::Get().GetUserID() : "masterdictionary", newname, tablemat);
         FReForma_projectEditor::Get().bCanUpdate = true;
         return true;
     }
