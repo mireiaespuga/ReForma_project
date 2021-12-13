@@ -1,5 +1,5 @@
 #pragma once
-
+#include  "mysql.h"
 #include "Modules/ModuleManager.h"
 #include "Widgets/Docking/SDockTab.h"
 #include "Widgets/Docking/SDockableTab.h"
@@ -12,7 +12,8 @@
 #include "CoreMinimal.h"
 #include "DataTableEditorUtils.h"
 #include "FTableMaterial.h"
-
+#include "../../../Plugins/MySQLConnectorUE4Plugin/Source/MySQLConnectorUE4Plugin/Public/MySQLDatabase.h"
+#include "../DBTab/DBTab.h"
 
 struct UEMatComparer {
     FName MaterialName;
@@ -21,6 +22,7 @@ struct UEMatComparer {
     FName FatherName;
     TMap <FString, float> ScalarValueParams;
     TMap <FString, FLinearColor> VectorValueParams;
+    bool isMasterEntry = false;
 
     UEMatComparer() :
         MaterialName(TEXT(""))
@@ -32,6 +34,7 @@ class FMatComparer : public SCompoundWidget
 { 
 
 public:
+
     TArray<UMaterialInterface*> AssetMats;
     TArray<UEMatComparer*> DictionaryMats;
     TArray<UEMatComparer*> SceneMats;
@@ -44,7 +47,9 @@ public:
     virtual void SwapMaterials();
     virtual TArray<UEMatComparer*> GetUEMatSuggestions(UMaterialInterface* realuemat, TArray<UEMatComparer*> mats);
     
-    virtual TArray<UEMatComparer*> GetUEMaterials(const FString type);
+    virtual TArray<UEMatComparer*> GetUEMaterials(const FString type, bool bCanDelete = false);
+    virtual void initDB();
+    virtual int GetLastRowIndex(UDataTable* table);
     virtual TArray<UStaticMesh*> GetDatasmithGeometries(FName Path);
     virtual TArray<UMaterialInterface*> GetDatasmithMaterials(FName Path);
     virtual TArray<UDataTable*> GetDataTables(FName Path);

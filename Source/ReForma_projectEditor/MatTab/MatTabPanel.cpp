@@ -178,18 +178,18 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
                                //.ButtonColorAndOpacity(FColor::Transparent)
                                //.ButtonStyle(this, &SItemWidget::GetItemIcon)
                            ]   
-                           + SHorizontalBox::Slot()
-                           .AutoWidth()
-                           .VAlign(VAlign_Center)
-                           .HAlign(HAlign_Right)
-                           [
-                               SNew(SButton)
-                               .Text(FText::FromString("Filter: only exact matches"))
-                               .OnClicked(this, &SMatTabPanel::FilterButtonPressed) 
-                               .IsEnabled(this, &SMatTabPanel::CanChangeMat)
-                               //.ButtonColorAndOpacity(FColor::Transparent)
-                               //.ButtonStyle(this, &SItemWidget::GetItemIcon)
-                           ]        
+                           //+ SHorizontalBox::Slot()
+                           //.AutoWidth()
+                           //.VAlign(VAlign_Center)
+                           //.HAlign(HAlign_Right)
+                           //[
+                           //    SNew(SButton)
+                           //    .Text(FText::FromString("Filter: only exact matches"))
+                           //    .OnClicked(this, &SMatTabPanel::FilterButtonPressed) 
+                           //    .IsEnabled(this, &SMatTabPanel::CanChangeMat)
+                           //    //.ButtonColorAndOpacity(FColor::Transparent)
+                           //    //.ButtonStyle(this, &SItemWidget::GetItemIcon)
+                           //]        
                        ]
                        + SVerticalBox::Slot()
                        .AutoHeight()
@@ -205,84 +205,6 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
         ];
 }
 
-//TSharedRef<ITableRow> MakeTileViewWidget(TSharedPtr<FAssetViewItem> AssetItem, const TSharedRef<STableViewBase>& OwnerTable)
-//{
-//    if (!ensure(AssetItem.IsValid()))
-//    {
-//        return SNew(STableRow<TSharedPtr<FAssetViewItem>>, OwnerTable);
-//    }
-//
-//    VisibleItems.Add(AssetItem);
-//    bPendingUpdateThumbnails = true;
-//
-//    if (AssetItem->IsFolder())
-//    {
-//        TSharedPtr< STableRow<TSharedPtr<FAssetViewItem>> > TableRowWidget;
-//        SAssignNew(TableRowWidget, STableRow<TSharedPtr<FAssetViewItem>>, OwnerTable)
-//            .Style(FEditorStyle::Get(), "ContentBrowser.AssetListView.TableRow")
-//            .Cursor(bAllowDragging ? EMouseCursor::GrabHand : EMouseCursor::Default)
-//            .OnDragDetected(this, &SAssetView::OnDraggingAssetItem);
-//
-//        TSharedRef<SAssetTileItem> Item =
-//            SNew(SAssetTileItem)
-//            .AssetItem(AssetItem)
-//            .ItemWidth(this, &SAssetView::GetTileViewItemWidth)
-//            .OnRenameBegin(this, &SAssetView::AssetRenameBegin)
-//            .OnRenameCommit(this, &SAssetView::AssetRenameCommit)
-//            .OnVerifyRenameCommit(this, &SAssetView::AssetVerifyRenameCommit)
-//            .OnItemDestroyed(this, &SAssetView::AssetItemWidgetDestroyed)
-//            .ShouldAllowToolTip(this, &SAssetView::ShouldAllowToolTips)
-//            .HighlightText(HighlightedText)
-//            .IsSelected(FIsSelected::CreateSP(TableRowWidget.Get(), &STableRow<TSharedPtr<FAssetViewItem>>::IsSelectedExclusively));
-//
-//        TableRowWidget->SetContent(Item);
-//
-//        return TableRowWidget.ToSharedRef();
-//    }
-//    else
-//    {
-//        TSharedPtr<FAssetThumbnail>& AssetThumbnail = RelevantThumbnails.FindOrAdd(AssetItem);
-//        if (!AssetThumbnail)
-//        {
-//            const float ThumbnailResolution = TileViewThumbnailResolution;
-//            AssetThumbnail = MakeShared<FAssetThumbnail>(FAssetData(), ThumbnailResolution, ThumbnailResolution, AssetThumbnailPool);
-//            AssetItem->GetItem().UpdateThumbnail(*AssetThumbnail);
-//            AssetThumbnail->GetViewportRenderTargetTexture(); // Access the texture once to trigger it to render
-//        }
-//
-//        TSharedPtr< STableRow<TSharedPtr<FAssetViewItem>> > TableRowWidget;
-//        SAssignNew(TableRowWidget, STableRow<TSharedPtr<FAssetViewItem>>, OwnerTable)
-//            .Style(FEditorStyle::Get(), "ContentBrowser.AssetListView.TableRow")
-//            .Cursor(bAllowDragging ? EMouseCursor::GrabHand : EMouseCursor::Default)
-//            .OnDragDetected(this, &SAssetView::OnDraggingAssetItem);
-//
-//        TSharedRef<SAssetTileItem> Item =
-//            SNew(SAssetTileItem)
-//            .AssetThumbnail(AssetThumbnail)
-//            .AssetItem(AssetItem)
-//            .ThumbnailPadding(TileViewThumbnailPadding)
-//            .ItemWidth(this, &SAssetView::GetTileViewItemWidth)
-//            .OnRenameBegin(this, &SAssetView::AssetRenameBegin)
-//            .OnRenameCommit(this, &SAssetView::AssetRenameCommit)
-//            .OnVerifyRenameCommit(this, &SAssetView::AssetVerifyRenameCommit)
-//            .OnItemDestroyed(this, &SAssetView::AssetItemWidgetDestroyed)
-//            .ShouldAllowToolTip(this, &SAssetView::ShouldAllowToolTips)
-//            .HighlightText(HighlightedText)
-//            .ThumbnailEditMode(this, &SAssetView::IsThumbnailEditMode)
-//            .ThumbnailLabel(ThumbnailLabel)
-//            .ThumbnailHintColorAndOpacity(this, &SAssetView::GetThumbnailHintColorAndOpacity)
-//            .AllowThumbnailHintLabel(AllowThumbnailHintLabel)
-//            .IsSelected(FIsSelected::CreateSP(TableRowWidget.Get(), &STableRow<TSharedPtr<FAssetViewItem>>::IsSelectedExclusively))
-//            .OnIsAssetValidForCustomToolTip(OnIsAssetValidForCustomToolTip)
-//            .OnGetCustomAssetToolTip(OnGetCustomAssetToolTip)
-//            .OnVisualizeAssetToolTip(OnVisualizeAssetToolTip)
-//            .OnAssetToolTipClosing(OnAssetToolTipClosing);
-//
-//        TableRowWidget->SetContent(Item);
-//
-//        return TableRowWidget.ToSharedRef();
-//    }
-//}
 
 void SMatTabPanel::SetCSVPath(const FString& Directory) {
     IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
@@ -368,10 +290,10 @@ bool SMatTabPanel::CanChangeMat() const
 }
 
 void SMatTabPanel::LoadData() {
+    MatComparer.DictionaryMats = MatComparer.GetUEMaterials("DICTIONARY", true);
+    MatComparer.SceneMats = MatComparer.GetUEMaterials("SCENE");
     MatComparer.AssetMeshes = MatComparer.GetDatasmithGeometries(FName(SMatTabPanel::GetGeometriesPath()));
     MatComparer.AssetMats = MatComparer.GetDatasmithMaterials(FName(SMatTabPanel::GetMaterialsPath()));
-    MatComparer.DictionaryMats = MatComparer.GetUEMaterials("DICTIONARY");
-    MatComparer.SceneMats = MatComparer.GetUEMaterials("SCENE");
     MatComparer.RealUnrealMats = MatComparer.GetDatasmithMaterials(FName(SMatTabPanel::GetUnrealLibraryPath()));
 }
 
@@ -389,7 +311,6 @@ void SMatTabPanel::SetCurrentFolderPath(const FString& Directory) {
         FString MaterialsFullPath = FPaths::ConvertRelativePathToFull(SMatTabPanel::GetInitialPath() + RightStr + "/Materials");
         if (PlatformFile.DirectoryExists(*GeometriesFullPath) && PlatformFile.DirectoryExists(*MaterialsFullPath)) {
             FReForma_projectEditor::Get().setFolderName(RightStr);
-            SMatTabPanel::LoadData();
         }
         else {
             const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(TEXT("Wrong Folder")));
@@ -431,45 +352,45 @@ FReply SMatTabPanel::VisualizeButtonPressed()
                 TSharedPtr<FMatItem> NewItem = MakeShareable(new FMatItem(mat->GetPathName(), Thumbnail, matchmat->GetPathName(), matchedThumbnail, true));
                 Items.Add(NewItem);
             }
-            else { //no dictionary entry
-                //TODO: try showing suggestions when no match is found!
-                //TODO: show if matched mat is the same or not!!!!! not show all table show materials that will be swapped!
+            //else { //no dictionary entry
+            //    //TODO: try showing suggestions when no match is found!
+            //    //TODO: show if matched mat is the same or not!!!!! not show all table show materials that will be swapped!
 
-                //Get suggestions for closest maxmats materials in dictionnary
-                TArray<UEMatComparer*> suggestions = MatComparer.GetUEMatSuggestions(mat, MatComparer.DictionaryMats);
+            //    //Get suggestions for closest maxmats materials in dictionnary
+            //    TArray<UEMatComparer*> suggestions = MatComparer.GetUEMatSuggestions(mat, MatComparer.DictionaryMats);
 
-                //Find the matched unreal material related to the first suggestion
-                if (suggestions.Num() > 0) {
-                    UEMatComparer* firstsuggest = suggestions[0];
-                    TArray<UMaterialInterface*> suggestedmat = MatComparer.RealUnrealMats.FilterByPredicate([&](const UMaterialInterface* ulibMat) {
-                        return ulibMat->GetFName() == firstsuggest->UMaterialMatch;
-                        });
+            //    //Find the matched unreal material related to the first suggestion
+            //    if (suggestions.Num() > 0) {
+            //        UEMatComparer* firstsuggest = suggestions[0];
+            //        TArray<UMaterialInterface*> suggestedmat = MatComparer.RealUnrealMats.FilterByPredicate([&](const UMaterialInterface* ulibMat) {
+            //            return ulibMat->GetFName() == firstsuggest->UMaterialMatch;
+            //            });
 
-                    UMaterialInterface* matchmat = nullptr;
-                    if (suggestedmat.Num() > 0) {
-                        matchmat = suggestedmat.Pop();
-                    }
-                    else {
-                        for (auto othersugg : suggestions) {
-                            TArray<UMaterialInterface*> suggestedmats = MatComparer.RealUnrealMats.FilterByPredicate([&](const UMaterialInterface* ulibMat) {
-                                return ulibMat->GetFName() == othersugg->UMaterialMatch;
-                                });
-                            if (suggestedmats.Num() > 0) {
-                                matchmat = suggestedmats.Pop();
-                                break;
-                            }
-                        }
-                    }
+            //        UMaterialInterface* matchmat = nullptr;
+            //        if (suggestedmat.Num() > 0) {
+            //            matchmat = suggestedmat.Pop();
+            //        }
+            //        else {
+            //            for (auto othersugg : suggestions) {
+            //                TArray<UMaterialInterface*> suggestedmats = MatComparer.RealUnrealMats.FilterByPredicate([&](const UMaterialInterface* ulibMat) {
+            //                    return ulibMat->GetFName() == othersugg->UMaterialMatch;
+            //                    });
+            //                if (suggestedmats.Num() > 0) {
+            //                    matchmat = suggestedmats.Pop();
+            //                    break;
+            //                }
+            //            }
+            //        }
 
-                    if (matchmat) {
-                        FAssetData MatchedAssetData = FAssetData(matchmat);
-                        TSharedPtr<FAssetThumbnail> matchedThumbnail = MakeShareable(new FAssetThumbnail(MatchedAssetData, ThumbnailResolution, ThumbnailResolution, ThumbnailPool));
-                        TSharedPtr<FMatItem> NewItem = MakeShareable(new FMatItem(mat->GetPathName(), Thumbnail, matchmat->GetPathName(), matchedThumbnail, false));
-                        Items.Add(NewItem);
-                    }   
-                }
+            //        if (matchmat) {
+            //            FAssetData MatchedAssetData = FAssetData(matchmat);
+            //            TSharedPtr<FAssetThumbnail> matchedThumbnail = MakeShareable(new FAssetThumbnail(MatchedAssetData, ThumbnailResolution, ThumbnailResolution, ThumbnailPool));
+            //            TSharedPtr<FMatItem> NewItem = MakeShareable(new FMatItem(mat->GetPathName(), Thumbnail, matchmat->GetPathName(), matchedThumbnail, false));
+            //            Items.Add(NewItem);
+            //        }   
+            //    }
 
-            }
+            //}
             
         } 
 

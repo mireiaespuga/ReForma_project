@@ -8,6 +8,7 @@
 class FCustomTabToolBase : public IReFormaModuleListenerInterface, public TSharedFromThis< FCustomTabToolBase >
 {
 public:
+    virtual ~FCustomTabToolBase() {}
     // IPixelopusToolBase
     virtual void OnStartupModule() override
     {
@@ -32,6 +33,7 @@ public:
         FGlobalTabmanager::Get()->PopulateTabSpawnerMenu(menuBuilder, TabName);
     };
 
+   
 protected:
     FName TabName;
     FText TabDisplayName;

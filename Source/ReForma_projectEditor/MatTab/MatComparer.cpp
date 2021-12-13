@@ -92,14 +92,33 @@ TArray < UDataTable*> FMatComparer::GetDataTables(FName Path) {
     return DataTables;
 }
 
-TArray<UEMatComparer*> FMatComparer::GetUEMaterials(const FString type) {
+void FMatComparer::initDB() {
+
+    UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
+    if (UETable) {
+        FReForma_projectEditor::Get().SetAuxTable(UETable);
+        FReForma_projectEditor::Get().bCanUpdate = false;
+        UETable->RowStruct = FTableMaterial::StaticStruct();
+        DBTab::loadMasterDB(UETable);
+        DBTab::loadArtistDB(UETable);
+        FMatComparer::DictionaryTable = UETable;
+
+        if(FReForma_projectEditor::Get().bCanDelete) DBTab::DeleteRowsDB(UETable);
+
+        FReForma_projectEditor::Get().bCanUpdate = true;
+    }
+}
+
+
+TArray<UEMatComparer*> FMatComparer::GetUEMaterials(const FString type, bool bCanDelete) {
 
     TArray<UEMatComparer*> UEMats;
     if (type == "DICTIONARY") {
-        UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
-        FMatComparer::DictionaryTable = UETable;
+        FReForma_projectEditor::Get().bCanDelete = bCanDelete;
+        FMatComparer::initDB();
 
-        for (auto it : UETable->GetRowMap())
+        
+        for (auto it : FMatComparer::DictionaryTable->GetRowMap())
         {
             // it.Key has the key from first column of the CSV file
             // it.Value has a pointer to a struct of data. You can safely cast it to your actual type, e.g FMyStruct* data = (FMyStruct*)(it.Value);
@@ -110,6 +129,7 @@ TArray<UEMatComparer*> FMatComparer::GetUEMaterials(const FString type) {
             uemat->MaterialName = FName(data->MaterialName);
             uemat->FatherName = FName(data->FatherName);
             uemat->UMaterialMatch = FName(data->UMaterialMatch);
+            uemat->isMasterEntry = bool(data->isMasterDictEntry);
 
             FMatComparer::ParseString(data->TextureNames, "TEXTURES", *uemat);
             FMatComparer::ParseString(data->ScalarParamValues, "SCALAR", *uemat);
@@ -418,22 +438,33 @@ void FMatComparer::GenerateCSVwMaxMaterials(const FString SavePath, TArray<UMate
     
 }
 
-bool FMatComparer::AddMaterialToDict(UMaterialInterface* assetToImport) {
-    UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
-    FName lastRowIndex = UETable->GetRowNames().Num() > 0 ? UETable->GetRowNames().Last() : FName("0");
+int FMatComparer::GetLastRowIndex(UDataTable* table) {
+    TArray<FName> rownames = table->GetRowNames();
+    rownames.Sort([](FName r1, FName r2) { return FCString::Atoi(*r1.ToString()) < FCString::Atoi(*r2.ToString()) /*r1.LexicalLess(r2)*/; });
+    return table->GetRowNames().Num() > 0 ? FCString::Atoi(*rownames.Last().ToString()) : 0;
+}
 
+bool FMatComparer::AddMaterialToDict(UMaterialInterface* assetToImport) {
+    
     FMatComparer::DictionaryMats = FMatComparer::GetUEMaterials("DICTIONARY");
     UEMatComparer* matched = FMatComparer::GetUeMatMatch(assetToImport, FMatComparer::DictionaryMats);
- 
-    if (!matched) { //there's no entry in table
-        int newname = FCString::Atoi(*lastRowIndex.ToString()) + 1;
 
+    UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
+    int lastRowIndex = FMatComparer::GetLastRowIndex(UETable);
+    if (!matched) { //there's no entry in table
+        
+        FReForma_projectEditor::Get().bCanUpdate = false;
+        int lastDictEntry = FGenericPlatformMath::Max(DBTab::GetLastDictEntry("masterdictionary"), DBTab::GetLastDictEntry(FReForma_projectEditor::Get().GetUserID()));
+        int newname = lastRowIndex < lastDictEntry ? lastDictEntry + 1 : lastRowIndex + 1;
         FTableMaterial* tablemat = new FTableMaterial();
-        FString outText = FMatComparer::MaxMatToFTableMat(assetToImport, FCString::Atoi(*lastRowIndex.ToString()) + 1, tablemat);
+        FString outText = FMatComparer::MaxMatToFTableMat(assetToImport, newname, tablemat);
 
         UETable->RowStruct = FTableMaterial::StaticStruct();
         UETable->AddRow(FName(FString::FromInt(newname)), *tablemat);
         FMatComparer::DictionaryTable = UETable;
+       
+        DBTab::InsertIntoDB(FReForma_projectEditor::Get().isArtist() ? FReForma_projectEditor::Get().GetUserID() : "masterdictionary", newname, tablemat);
+        FReForma_projectEditor::Get().bCanUpdate = true;
         return true;
     }
     return false;
@@ -511,6 +542,7 @@ FString FMatComparer::MaxMatToFTableMat(UMaterialInterface* maxmat, int it, FTab
     intablemat->ScalarParamValues = scalarparams;
     intablemat->VectorParamValues = vecparams;
     intablemat->TextureNames = texparams;
+    intablemat->isMasterDictEntry = !FReForma_projectEditor::Get().isArtist();
 
     return (FString::FromInt(it) + "," + materialname + "," + ""  + "," + fathername + "," + texparams + "," + scalarparams + "," + vecparams + "\n");
 }
