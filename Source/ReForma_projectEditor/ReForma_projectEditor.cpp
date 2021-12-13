@@ -35,7 +35,7 @@ bool FReForma_projectEditor::CloseOpenEditors() {
 }
 
 void FReForma_projectEditor::CallSaveArtistDB(const UDataTable* InDataTable, const FName InRowName) {
-    if(bCanUpdate) DBTab::SaveArtistTable(InDataTable, InRowName);
+    if(bCanUpdate) DBTab::UpdateDB(InDataTable, InRowName);
 }
 
 bool FReForma_projectEditor::LoadMe() {
@@ -63,9 +63,6 @@ bool FReForma_projectEditor::LoadMe() {
         return false;
     }
 
-
-
-    //
     //UE_LOG(LogTemp, Warning, TEXT("%s"), *loadedFile); //C:/Users/Mireia Espuga/Desktop/ReForma_project/Content/
     //FString username, right;
     //bool result;

@@ -47,7 +47,7 @@ public:
     virtual void SwapMaterials();
     virtual TArray<UEMatComparer*> GetUEMatSuggestions(UMaterialInterface* realuemat, TArray<UEMatComparer*> mats);
     
-    virtual TArray<UEMatComparer*> GetUEMaterials(const FString type);
+    virtual TArray<UEMatComparer*> GetUEMaterials(const FString type, bool bCanDelete = false);
     virtual void initDB();
     virtual int GetLastRowIndex(UDataTable* table);
     virtual TArray<UStaticMesh*> GetDatasmithGeometries(FName Path);

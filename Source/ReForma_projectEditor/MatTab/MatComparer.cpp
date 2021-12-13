@@ -96,22 +96,28 @@ void FMatComparer::initDB() {
 
     UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
     if (UETable) {
+        FReForma_projectEditor::Get().SetAuxTable(UETable);
         FReForma_projectEditor::Get().bCanUpdate = false;
         UETable->RowStruct = FTableMaterial::StaticStruct();
         DBTab::loadMasterDB(UETable);
         DBTab::loadArtistDB(UETable);
         FMatComparer::DictionaryTable = UETable;
+
+        if(FReForma_projectEditor::Get().bCanDelete) DBTab::DeleteRowsDB(UETable);
+
         FReForma_projectEditor::Get().bCanUpdate = true;
     }
 }
 
 
-TArray<UEMatComparer*> FMatComparer::GetUEMaterials(const FString type) {
+TArray<UEMatComparer*> FMatComparer::GetUEMaterials(const FString type, bool bCanDelete) {
 
     TArray<UEMatComparer*> UEMats;
     if (type == "DICTIONARY") {
+        FReForma_projectEditor::Get().bCanDelete = bCanDelete;
         FMatComparer::initDB();
 
+        
         for (auto it : FMatComparer::DictionaryTable->GetRowMap())
         {
             // it.Key has the key from first column of the CSV file
@@ -439,13 +445,12 @@ int FMatComparer::GetLastRowIndex(UDataTable* table) {
 }
 
 bool FMatComparer::AddMaterialToDict(UMaterialInterface* assetToImport) {
-    UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
     
-    int lastRowIndex = FMatComparer::GetLastRowIndex(UETable);
-
     FMatComparer::DictionaryMats = FMatComparer::GetUEMaterials("DICTIONARY");
     UEMatComparer* matched = FMatComparer::GetUeMatMatch(assetToImport, FMatComparer::DictionaryMats);
 
+    UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
+    int lastRowIndex = FMatComparer::GetLastRowIndex(UETable);
     if (!matched) { //there's no entry in table
         
         FReForma_projectEditor::Get().bCanUpdate = false;

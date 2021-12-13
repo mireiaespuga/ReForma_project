@@ -290,10 +290,10 @@ bool SMatTabPanel::CanChangeMat() const
 }
 
 void SMatTabPanel::LoadData() {
+    MatComparer.DictionaryMats = MatComparer.GetUEMaterials("DICTIONARY", true);
+    MatComparer.SceneMats = MatComparer.GetUEMaterials("SCENE");
     MatComparer.AssetMeshes = MatComparer.GetDatasmithGeometries(FName(SMatTabPanel::GetGeometriesPath()));
     MatComparer.AssetMats = MatComparer.GetDatasmithMaterials(FName(SMatTabPanel::GetMaterialsPath()));
-    MatComparer.DictionaryMats = MatComparer.GetUEMaterials("DICTIONARY");
-    MatComparer.SceneMats = MatComparer.GetUEMaterials("SCENE");
     MatComparer.RealUnrealMats = MatComparer.GetDatasmithMaterials(FName(SMatTabPanel::GetUnrealLibraryPath()));
 }
 

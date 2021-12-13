@@ -3,6 +3,7 @@
 #include "UnrealEd.h"
 #include "SlateBasics.h"
 #include "SlateExtras.h"
+
 #include "Editor/LevelEditor/Public/LevelEditor.h"
 #include "Editor/PropertyEditor/Public/PropertyEditing.h"
 #include "IAssetTypeActions.h"
@@ -16,13 +17,13 @@
 struct UserInfo {
     FString userId;
     FString role;
-    FString permissions;
     FString password;
+    bool isTableCreated;
     
     UserInfo() :
         role(TEXT("default_user")),
-        permissions(TEXT("SELECT")),
-        password(TEXT("Forma1235"))
+        password(TEXT("Forma1235")),
+        isTableCreated(false)
     {}
 };
 
@@ -56,16 +57,22 @@ public:
     UMySQLDatabase* GetDB() { return db; };
     void CallSaveArtistDB(const UDataTable* InDataTable, const FName InRowName);
     bool bCanUpdate = true;
+    bool bCanDelete = false;
+    void SetAuxTable(UDataTable* InDataTable) { 
+        auxTableRows.Empty();
+        for (auto it : InDataTable->GetRowMap()) { auxTableRows.Push(it.Key); }
+    };
+    TArray<FName> auxTableRows;
 
     bool LoadMe();
     void SetMyRole(FString InRole) {  me->role = InRole;};
     void SetMyUserId(FString InUserId) { me->userId = InUserId; };
-    void SetMyPermissions(FString InPerm) { me->permissions = InPerm; };
+    void SetTableCreated(bool isIt) { me->isTableCreated = isIt; };
     void SetMyPSWRD(FString InPass) { me->password = InPass; };
     FString GetUserID() { return me->userId; };
     FString GetRole() { return me->role; };
     FString GetPSWRD() { return me->password; };
-    FString GetPerm() { return me->permissions; };
+    bool GetTableCreated() { return me->isTableCreated; };
     bool isArtist() { return me->role == "default_user"; };
     
 

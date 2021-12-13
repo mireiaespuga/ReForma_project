@@ -16,9 +16,10 @@ public:
     static void loadMasterDB(UDataTable*& UETable);
     static FString CreateArtistTable();
     
-    static void SaveArtistTable(const UDataTable* InDataTable, const FName InRowName);
+    static void UpdateDB(const UDataTable* InDataTable, const FName InRowName);
+    static void DeleteRowsDB(UDataTable* InDataTable);
     static int GetLastDictEntry(FString tablename);
-    TArray<FName> rowsToDelete;
+    
 
 protected: 
     TSharedPtr<FUICommandList> CommandList = NULL;
