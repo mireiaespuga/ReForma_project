@@ -558,8 +558,9 @@ TSharedRef<ITableRow> SMatTabPanel::OnGenerateRowForList(TSharedPtr<FMatItem> It
                     [
                         SNew(SButton)
                         .ButtonStyle(FEditorStyle::Get(), "HoverHintOnly")
-                        .ToolTipText(FText::FromString("Find match in table"))
+                        .ToolTipText(Item->isExactMatch ? FText::FromString("Find match in table") : FText::FromString("Not enabled"))
                         .ContentPadding(4.0f)
+                        .IsEnabled(Item->isExactMatch)
                         .OnClicked(this, &SMatTabPanel::OpenTable, Item)
                         .ForegroundColor(FSlateColor::UseForeground())
                         [
