@@ -34,19 +34,17 @@ bool FReForma_projectEditor::CloseOpenEditors() {
     
 }
 
-void FReForma_projectEditor::CallSaveArtistDB(const UDataTable* InDataTable, const FName InRowName) {
+void FReForma_projectEditor::CallUpdateDB(const UDataTable* InDataTable, const FName InRowName) {
     if(bCanUpdate) DBTab::UpdateDB(InDataTable, InRowName);
 }
 
 bool FReForma_projectEditor::LoadMe() {
 
     //CONFIG FILEEEEE!!!! DEALS W/ USER TABLE PLUS PERMISSIONS!
-    //CREATE PERMISSIONS TABLE!
     FString directory = "C:/Users/mysql_unreal_userinfo.txt", loadedFile;
     TArray<FString> dataLines;
     if (FFileHelper::LoadFileToString(loadedFile, *directory)) {
         int32 lineCount = loadedFile.ParseIntoArray(dataLines, _T(";"), true);
-        UE_LOG(LogTemp, Warning, TEXT("file: %s"), *loadedFile);
         for (auto dataline : dataLines) {
             FString value, param;
             dataline = dataline.Replace(TEXT(";"), TEXT(""));
@@ -55,7 +53,6 @@ bool FReForma_projectEditor::LoadMe() {
             if (param == "role") SetMyRole(value);
             if (param == "password") SetMyPSWRD(value);
         }
-        UE_LOG(LogTemp, Warning, TEXT("%s %s"), *GetRole(), *GetUserID());
         return true;
     }
     else {
