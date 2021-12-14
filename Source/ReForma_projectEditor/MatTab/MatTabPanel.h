@@ -15,13 +15,15 @@
 struct FMatItem
 {
     FString ObjectPath;
+    FString ObjectName;
     TSharedPtr<class FAssetThumbnail> Thumbnail;
     FString MatchObjectPath;
     TSharedPtr<class FAssetThumbnail> MatchThumbnail;
     bool isExactMatch;
 
-    FMatItem(const FString& InObjectPath, const TSharedPtr<class FAssetThumbnail>& InThumbnail, const FString& InMatchObjectPath, const TSharedPtr<class FAssetThumbnail>& InMatchThumbnail, const bool &inIsExactMatch)
+    FMatItem(const FString& InObjectPath, const FString& InObjectName, const TSharedPtr<class FAssetThumbnail>& InThumbnail, const FString& InMatchObjectPath, const TSharedPtr<class FAssetThumbnail>& InMatchThumbnail, const bool& inIsExactMatch)
         : ObjectPath(InObjectPath)
+        , ObjectName(InObjectName)
         , Thumbnail(InThumbnail)
         , MatchObjectPath(InMatchObjectPath)
         , MatchThumbnail(InMatchThumbnail)
@@ -56,9 +58,11 @@ class SMatTabPanel : public SCompoundWidget
        
         FReply VisualizeButtonPressed();
         FReply FilterButtonPressed();
+        FReply OpenTable(TSharedPtr<FMatItem> Item);
 
         /* Adds a new textbox with the string to the list */
         TSharedRef<ITableRow> OnGenerateRowForList(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable);
+        FOnClicked OnDoubleClick(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable);
 
 public: 
     

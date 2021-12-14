@@ -16,7 +16,7 @@ public:
 
     #if WITH_EDITOR
     virtual void OnDataTableChanged(const UDataTable* InDataTable, const FName InRowName) override {
-        FReForma_projectEditor::Get().CallSaveArtistDB(InDataTable, InRowName);
+        FReForma_projectEditor::Get().CallUpdateDB(InDataTable, InRowName);
     };
     #endif
 

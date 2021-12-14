@@ -19,17 +19,6 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
     {
         // do anything you need from tool object
     }
-    
-    TSharedRef<SWidget> AssetPickerWidget = SNew(SObjectPropertyEntryBox)
-        .ObjectPath(TEXT("/Game/Datasmith/test_scene/mymats"))//(this, &SMaterialAnalyzer::GetCurrentAssetPath)
-        .AllowedClass(UMaterialInterface::StaticClass())
-        //.OnObjectChanged()//(this, &SMaterialAnalyzer::OnAssetSelected)
-        .AllowClear(false)
-        .DisplayUseSelected(true)
-        .DisplayBrowse(true)
-        .NewAssetFactories(TArray<UFactory*>())
-        .IsEnabled(true);//(this, &SMaterialAnalyzer::IsMaterialSelectionAllowed);
-
 
     ChildSlot
         [
@@ -209,6 +198,7 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
                             .ItemHeight(24)
                             .ListItemsSource(&DisplayedItems) //The Items array is the source of this listview
                             .OnGenerateRow(this, &SMatTabPanel::OnGenerateRowForList)
+                            
                         ]
                    ]
                 ]
@@ -302,9 +292,10 @@ bool SMatTabPanel::CanChangeMat() const
 
 void SMatTabPanel::LoadData() {
     MatComparer.DictionaryMats = MatComparer.GetUEMaterials("DICTIONARY", true);
-    MatComparer.SceneMats = MatComparer.GetUEMaterials("SCENE");
     MatComparer.AssetMeshes = MatComparer.GetDatasmithGeometries(FName(SMatTabPanel::GetGeometriesPath()));
     MatComparer.AssetMats = MatComparer.GetDatasmithMaterials(FName(SMatTabPanel::GetMaterialsPath()));
+    
+    MatComparer.SceneMats = MatComparer.GetUEMaterials("SCENE");
     MatComparer.RealUnrealMats = MatComparer.GetDatasmithMaterials(FName(SMatTabPanel::GetUnrealLibraryPath()));
 }
 
@@ -329,10 +320,10 @@ void SMatTabPanel::SetCurrentFolderPath(const FString& Directory) {
     }
 }
 
-
 FReply SMatTabPanel::VisualizeButtonPressed()
 {
     SMatTabPanel::LoadData();
+    
     DisplayedItems.Empty();
     ExactItems.Empty();
     SuggestedItems.Empty();
@@ -360,7 +351,7 @@ FReply SMatTabPanel::VisualizeButtonPressed()
                 FAssetData MatchedAssetData = FAssetData(matchmat);
                 TSharedPtr<FAssetThumbnail> matchedThumbnail = MakeShareable(new FAssetThumbnail(MatchedAssetData, ThumbnailResolution, ThumbnailResolution, ThumbnailPool));
                 
-                TSharedPtr<FMatItem> NewItem = MakeShareable(new FMatItem(mat->GetPathName(), Thumbnail, matchmat->GetPathName(), matchedThumbnail, true));
+                TSharedPtr<FMatItem> NewItem = MakeShareable(new FMatItem(mat->GetPathName(), mat->GetFName().ToString(), Thumbnail, matchmat->GetPathName(), matchedThumbnail, true));
                 ExactItems.Add(NewItem);
             }
             else { //no dictionary entry
@@ -381,7 +372,7 @@ FReply SMatTabPanel::VisualizeButtonPressed()
                     }
                     else { //if first suggestion is not found
                         for (auto othersugg : suggestions) {
-                            TArray<UMaterialInterface*> suggestedmats = MatComparer.RealUnrealMats.FilterByPredicate([&](const UMaterialInterface* ulibMat) {
+                            TArray<UMaterialInterface*> suggestedmats = MatComparer.RealUnrealMats.FilterByPredicate([&](const UMaterialInterface* ulibMat) {  
                                 return ulibMat->GetFName() == othersugg->UMaterialMatch;
                                 });
                             if (suggestedmats.Num() > 0 && MatComparer.AcceptSuggestion(mat, othersugg, thr)) {
@@ -394,7 +385,7 @@ FReply SMatTabPanel::VisualizeButtonPressed()
                     if (matchmat) {
                         FAssetData MatchedAssetData = FAssetData(matchmat);
                         TSharedPtr<FAssetThumbnail> matchedThumbnail = MakeShareable(new FAssetThumbnail(MatchedAssetData, ThumbnailResolution, ThumbnailResolution, ThumbnailPool));
-                        TSharedPtr<FMatItem> NewItem = MakeShareable(new FMatItem(mat->GetPathName(), Thumbnail, matchmat->GetPathName(), matchedThumbnail, false));
+                        TSharedPtr<FMatItem> NewItem = MakeShareable(new FMatItem(mat->GetPathName(), mat->GetFName().ToString(), Thumbnail, matchmat->GetPathName(), matchedThumbnail, false));
                         SuggestedItems.Add(NewItem);
                     }   
                 }
@@ -422,6 +413,7 @@ FReply SMatTabPanel::FilterButtonPressed() {
     ListViewWidget->RequestListRefresh();
     return FReply::Handled();
 }
+
 //TSharedRef<ITableRow> SMatTabPanel::OnGenerateSuggestions(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable){
 //
 //}
@@ -446,9 +438,11 @@ TSharedRef<ITableRow> SMatTabPanel::OnGenerateRowForList(TSharedPtr<FMatItem> It
 
     return SNew(STableRow<TSharedPtr<FMatItem>>, OwnerTable)
             .Style(FEditorStyle::Get(), "ContentBrowser.AssetListView.TableRow")
+            
             [
                 SNew(SUniformGridPanel)
                 .SlotPadding(2)
+                
                 + SUniformGridPanel::Slot(0, 0)
                 [
                     SNew(SHorizontalBox)
@@ -456,6 +450,7 @@ TSharedRef<ITableRow> SMatTabPanel::OnGenerateRowForList(TSharedPtr<FMatItem> It
                     + SHorizontalBox::Slot()
                     .AutoWidth()
                     .VAlign(VAlign_Center)
+                    
                     [
                         SNew(SBox)
                         .WidthOverride(ThumbnailResolution + ThumbnailBoxPadding * 2)
@@ -555,13 +550,57 @@ TSharedRef<ITableRow> SMatTabPanel::OnGenerateRowForList(TSharedPtr<FMatItem> It
                         .Font(FEditorStyle::GetFontStyle("ContentBrowser.AssetListViewClassFont"))
                         .Text(FText::FromString(SMatTabPanel::GetTypeOfMatch(Item)))
                     ]
+                    + SHorizontalBox::Slot()
+                    .FillWidth(1)
+                    .Padding(0, 0, 20, 0)
+                    .VAlign(VAlign_Center)
+                    .HAlign(HAlign_Right)
+                    [
+                        SNew(SButton)
+                        .ButtonStyle(FEditorStyle::Get(), "HoverHintOnly")
+                        .ToolTipText(FText::FromString("Find match in table"))
+                        .ContentPadding(4.0f)
+                        .OnClicked(this, &SMatTabPanel::OpenTable, Item)
+                        .ForegroundColor(FSlateColor::UseForeground())
+                        [
+                            SNew(SImage)
+                            .Image(FEditorStyle::GetBrush("PropertyWindow.Button_Browse"))
+                        ]
+                        
+                        
+                        
+                    //.ButtonStyle(this, &SItemWidget::GetItemIcon)
+                    ]
                 ]
-        ];
+                
+         ];
     
 }
 
 FString SMatTabPanel::GetTypeOfMatch(TSharedPtr<FMatItem> Item) {
     return Item->isExactMatch ? "Exact Match" : "Suggestion";
+}
+
+FReply SMatTabPanel::OpenTable(TSharedPtr<FMatItem> Item) {
+
+    for (auto it : MatComparer.DictionaryTable->GetRowMap()) {
+        FTableMaterial* data = (FTableMaterial*)(it.Value);
+        if (data->MaterialName == *Item->ObjectName) {
+            FString context;
+            FTableMaterial* row = MatComparer.DictionaryTable->FindRow<FTableMaterial>(it.Key, context);
+            if (row) {
+                GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OpenEditorForAsset(MatComparer.DictionaryTable);
+                IAssetEditorInstance* ae = GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->FindEditorForAsset(MatComparer.DictionaryTable, true);
+                TSharedPtr< FTabManager > tabmanager = ae->GetAssociatedTabManager();
+                TSharedRef< SDockTab > editortab = tabmanager->InvokeTab(FTabId("DataTableEditor_RowEditor"));
+                editortab->DrawAttention();
+                FDataTableEditorUtils::SelectRow(MatComparer.DictionaryTable, it.Key);
+                return FReply::Handled();
+            }
+        }
+    }
+    
+    return FReply::Handled();
 }
 
 #undef LOCTEXT_NAMESPACE

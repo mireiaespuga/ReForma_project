@@ -22,7 +22,7 @@ struct UEMatComparer {
     FName FatherName;
     TMap <FString, float> ScalarValueParams;
     TMap <FString, FLinearColor> VectorValueParams;
-    bool isMasterEntry = false;
+    bool isMasterEntry;
 
     UEMatComparer() :
         MaterialName(TEXT(""))

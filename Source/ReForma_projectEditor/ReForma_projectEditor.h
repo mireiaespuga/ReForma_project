@@ -55,7 +55,7 @@ public:
     void setConnection(UMySQLConnection* cs) { connection = cs; };
     UMySQLConnection* getConnection() { return connection;  };   
     UMySQLDatabase* GetDB() { return db; };
-    void CallSaveArtistDB(const UDataTable* InDataTable, const FName InRowName);
+    void CallUpdateDB(const UDataTable* InDataTable, const FName InRowName);
     bool bCanUpdate = true;
     bool bCanDelete = false;
     void SetAuxTable(UDataTable* InDataTable) { 
