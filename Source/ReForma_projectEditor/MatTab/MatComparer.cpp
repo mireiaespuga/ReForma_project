@@ -104,7 +104,6 @@ void FMatComparer::initDB() {
         FMatComparer::DictionaryTable = UETable;
 
         if(FReForma_projectEditor::Get().bCanDelete) DBTab::DeleteRowsDB(UETable);
-
         FReForma_projectEditor::Get().bCanUpdate = true;
     }
 }
@@ -117,7 +116,6 @@ TArray<UEMatComparer*> FMatComparer::GetUEMaterials(const FString type, bool bCa
         FReForma_projectEditor::Get().bCanDelete = bCanDelete;
         FMatComparer::initDB();
 
-        
         for (auto it : FMatComparer::DictionaryTable->GetRowMap())
         {
             // it.Key has the key from first column of the CSV file
@@ -259,7 +257,6 @@ float FMatComparer::ScalarParamsCheck(UMaterialInterface& maxmat, UEMatComparer&
     }
     
     for (auto p : ScalarParamsMax) {
-        
         if (maxmat.GetScalarParameterValue(p, pmaxvalue)) {
             float pUevalue;
             if (exactMatch) {
@@ -299,8 +296,7 @@ float FMatComparer::VectorParamsCheck(UMaterialInterface& maxmat, UEMatComparer&
         noVect = true;
     }
 
-    for (auto p : VecParamsMax) {
-        
+    for (auto p : VecParamsMax) {       
         if (maxmat.GetVectorParameterValue(p, pmaxvalue)) {
             FLinearColor pUevalue;
             if (exactMatch) {
@@ -329,20 +325,22 @@ float FMatComparer::VectorParamsCheck(UMaterialInterface& maxmat, UEMatComparer&
 
 }
 
-void FMatComparer::SetUeMatMatch(UMaterialInterface* realuemat, UEMatComparer*& maxmatmatch) {
+void FMatComparer::SetUeMatMatch(UMaterialInterface* realmat, UMaterialInterface* match) {
     
-    //CHAGE ITTTT SINCE YOU WON'T FIND ROW
     UDataTable* UETable = LoadObject<UDataTable>(NULL, UTF8_TO_TCHAR("DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'"));
 
     for (auto row : UETable->GetRowMap()) {
         // row.Key has the key from first column of the CSV file
         // row.Value has a pointer to a struct of data. You can safely cast it to your actual type, e.g FMyStruct* data = (FMyStruct*)(row.Value);
         FTableMaterial* data = (FTableMaterial*)(row.Value);
-        if (data->MaterialName == maxmatmatch->MaterialName.ToString()) {
-            data->UMaterialMatch = realuemat->GetFName().ToString();
-            row.Value = (uint8*)data; //change row for modified data
-            break;
-        }     
+        if (data->MaterialName == realmat->GetFName().ToString()) {
+            if (data->isMasterDictEntry == !FReForma_projectEditor::Get().isArtist()) { //artist is Not allowed to change master entries
+                data->UMaterialMatch = match->GetFName().ToString();
+                row.Value = (uint8*)data; //change row for modified data
+                FReForma_projectEditor::Get().CallUpdateDB(UETable, row.Key); //update db 
+                break;
+            }
+        }
     }
 
     FMatComparer::DictionaryTable = UETable;
@@ -352,16 +350,12 @@ void FMatComparer::SwapMaterials() {
     bool bSomethingChanged = false;
     int matSwaps = 0;
     // For each mesh in the Datasmith geometries
-    for (auto mesh : FMatComparer::AssetMeshes)
-    {
-        if (mesh)
-        {
+    for (auto mesh : FMatComparer::AssetMeshes) {
+        if (mesh) {
             int numberOfMaterials = mesh->GetStaticMaterials().Num();
-            for (int index = 0; index < numberOfMaterials; index++)
-            {
+            for (int index = 0; index < numberOfMaterials; index++) {
                 UMaterialInterface* meshMat = mesh->GetMaterial(index);
-                if (meshMat)
-                {
+                if (meshMat){
                     //UEMatComparer* UEmaterialMatch = FMatComparer::GetUeMatMatch(meshMat, FMatComparer::DictionaryMats); //get match from maxMats table
                     TArray<UEMatComparer*> UEmaterialMatchs = FMatComparer::SceneMats.FilterByPredicate([&](UEMatComparer* scenemat) {
                             return FMatComparer::MatNameCheck(*meshMat, *scenemat);
@@ -385,12 +379,6 @@ void FMatComparer::SwapMaterials() {
                             }
                         }
                     }
-                    // Suggestions
-                    //if (!UEmaterialMatch) {
-                    //    MatComparer.GetUEMatSuggestions(realUEmat, MatComparer.UnrealMats);
-                    //    //TODO MATCH UNREALMAT WITH REAL UNREAL MAT TO SET NEW MATERIAL
-
-                    //} 
                 }
             }
         }

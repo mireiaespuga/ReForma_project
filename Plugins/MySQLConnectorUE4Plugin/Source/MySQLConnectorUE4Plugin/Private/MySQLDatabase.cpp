@@ -71,12 +71,14 @@ bool UMySQLDatabase::MySQLConnectorExecuteQuery(FString Query, UMySQLConnection*
 	};
 
 	std::string MyStdString(TCHAR_TO_UTF8(*Query));
-
+	
 	//if (mysql_query(con, "INSERT INTO `test`.`t1` (`Qwe`) VALUES ('Привет ');")) {
 	if (mysql_query(Connection->globalCon, MyStdString.c_str()))
 	{
+		UE_LOG(LogMySQL_Database, Error, TEXT("%s"), *Query);
 		return false;
 	}
+	UE_LOG(LogMySQL_Database, Warning, TEXT("%s"), *Query);
 	return true;
 }
 

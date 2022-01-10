@@ -43,7 +43,7 @@ public:
     UDataTable* DictionaryTable; 
 
     virtual UEMatComparer* GetUeMatMatch(UMaterialInterface* realuemat, TArray<UEMatComparer*>& maxmats);
-    virtual void SetUeMatMatch(UMaterialInterface* realuemat, UEMatComparer*& maxmatmatch);
+    virtual void SetUeMatMatch(UMaterialInterface* realmat, UMaterialInterface* match);
     virtual void SwapMaterials();
     virtual TArray<UEMatComparer*> GetUEMatSuggestions(UMaterialInterface* realuemat, TArray<UEMatComparer*> mats);
     

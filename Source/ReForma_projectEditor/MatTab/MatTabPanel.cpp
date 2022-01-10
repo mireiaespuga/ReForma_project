@@ -155,6 +155,16 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
                        .AutoHeight()
                        .Padding(0.f, 0.f, 0.f, 4.f)
                        [
+                           
+                        SNew(STextBlock)
+                        .Text(FText::FromString(TEXT("Visualize matched materials:   ")))
+                           
+                       ]
+                          
+                        + SVerticalBox::Slot()
+                       .AutoHeight()
+                       .Padding(0.f, 0.f, 0.f, 4.f)
+                       [
                            SNew(SHorizontalBox)
                            + SHorizontalBox::Slot()
                            .AutoWidth()
@@ -175,7 +185,7 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
                                SNew(SButton)
                                .Text(FText::FromString("Get Suggestions"))
                                .OnClicked(this, &SMatTabPanel::FilterButtonPressed) 
-                               .IsEnabled(this, &SMatTabPanel::CanChangeMat)
+                               .IsEnabled(this, &SMatTabPanel::canGetSuggestions)
                                //.ButtonColorAndOpacity(FColor::Transparent)
                                //.ButtonStyle(this, &SItemWidget::GetItemIcon)
                            ]
@@ -395,12 +405,13 @@ FReply SMatTabPanel::VisualizeButtonPressed()
         } 
 
     }
-    
+    SMatTabPanel::bGetSuggestions = true;
     //we only see exact matches
     DisplayedItems = ExactItems;
 
     // Update the listview
     ListViewWidget->RequestListRefresh();
+    
     return FReply::Handled();
 }
 
@@ -417,6 +428,38 @@ FReply SMatTabPanel::FilterButtonPressed() {
 //TSharedRef<ITableRow> SMatTabPanel::OnGenerateSuggestions(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable){
 //
 //}
+
+TSharedRef <SButton> SMatTabPanel::FinderOrAddButton(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable) {
+
+    if(Item->isExactMatch){
+        return SNew(SButton)
+            .ButtonStyle(FEditorStyle::Get(), "HoverHintOnly")
+            .ToolTipText(Item->isExactMatch ? FText::FromString("Find match in table") : FText::FromString("Not enabled"))
+            .ContentPadding(4.0f)
+            .IsEnabled(Item->isExactMatch)
+            .OnClicked(this, &SMatTabPanel::OpenTable, Item)
+            .ForegroundColor(FSlateColor::UseForeground())
+            [
+                SNew(SImage)
+                .Image(FEditorStyle::GetBrush("PropertyWindow.Button_Browse"))
+            ];
+    }
+    else {
+        return SNew(SButton)
+            .ButtonStyle(FEditorStyle::Get(), "HoverHintOnly")
+            .ToolTipText(!Item->isExactMatch ? FText::FromString("Add match to table") : FText::FromString("Not enabled"))
+            .ContentPadding(4.0f)
+            .IsEnabled(!Item->isExactMatch)
+            .OnClicked(this, &SMatTabPanel::AddEntry, Item)
+            .ForegroundColor(FSlateColor::UseForeground())
+            [
+                SNew(SImage)
+                .Image(FEditorStyle::GetBrush("PropertyWindow.Button_Edit"))
+            ];
+    }
+}
+
+
 
 TSharedRef<ITableRow> SMatTabPanel::OnGenerateRowForList(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable)
 {
@@ -556,18 +599,9 @@ TSharedRef<ITableRow> SMatTabPanel::OnGenerateRowForList(TSharedPtr<FMatItem> It
                     .VAlign(VAlign_Center)
                     .HAlign(HAlign_Right)
                     [
-                        SNew(SButton)
-                        .ButtonStyle(FEditorStyle::Get(), "HoverHintOnly")
-                        .ToolTipText(Item->isExactMatch ? FText::FromString("Find match in table") : FText::FromString("Not enabled"))
-                        .ContentPadding(4.0f)
-                        .IsEnabled(Item->isExactMatch)
-                        .OnClicked(this, &SMatTabPanel::OpenTable, Item)
-                        .ForegroundColor(FSlateColor::UseForeground())
-                        [
-                            SNew(SImage)
-                            .Image(FEditorStyle::GetBrush("PropertyWindow.Button_Browse"))
-                        ]
+                       
                         
+                        SMatTabPanel::FinderOrAddButton(Item, OwnerTable)
                         
                         
                     //.ButtonStyle(this, &SItemWidget::GetItemIcon)
@@ -601,6 +635,22 @@ FReply SMatTabPanel::OpenTable(TSharedPtr<FMatItem> Item) {
         }
     }
     
+    return FReply::Handled();
+}
+
+FReply SMatTabPanel::AddEntry(TSharedPtr<FMatItem> Item) {
+    
+    UObject* ListObject = FindObject<UObject>(NULL, *Item->ObjectPath);
+    FAssetData ListAssetData(ListObject);
+    UMaterialInterface* test = Cast<UMaterialInterface>(ListAssetData.GetAsset());
+
+    UObject* MatchObject = FindObject<UObject>(NULL, *Item->MatchObjectPath);
+    FAssetData MatchAssetData(MatchObject);
+    UMaterialInterface* match = Cast<UMaterialInterface>(MatchAssetData.GetAsset());
+    
+    MatComparer.AddMaterialToDict(test);
+    MatComparer.SetUeMatMatch(test, match);
+    SMatTabPanel::OpenTable(Item);
     return FReply::Handled();
 }
 
