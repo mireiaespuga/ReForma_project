@@ -17,8 +17,8 @@ void MatTab::OnShutdownModule()
 void MatTab::Initialize()
 {
     TabName = "MatTab";
-    TabDisplayName = FText::FromString("Scene materials editor");
-    ToolTipText = FText::FromString("Scene materials editor");
+    TabDisplayName = FText::FromString("Scene Materials Editor");
+    ToolTipText = FText::FromString("Editor for the imported Datasmith's scene materials");
 }
 
 TSharedRef<SDockTab> MatTab::SpawnTab(const FSpawnTabArgs& TabSpawnArgs)

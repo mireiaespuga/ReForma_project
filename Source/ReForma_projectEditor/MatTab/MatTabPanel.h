@@ -55,14 +55,18 @@ class SMatTabPanel : public SCompoundWidget
         FString GetTypeOfMatch(TSharedPtr<FMatItem> Item);
         void LoadData();
         bool isSceneFolderValid() const;
-       
+        
+        
+        bool canGetSuggestions() const { return bGetSuggestions; };
         FReply VisualizeButtonPressed();
         FReply FilterButtonPressed();
         FReply OpenTable(TSharedPtr<FMatItem> Item);
+        FReply AddEntry(TSharedPtr<FMatItem> Item);
 
         /* Adds a new textbox with the string to the list */
         TSharedRef<ITableRow> OnGenerateRowForList(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable);
         FOnClicked OnDoubleClick(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable);
+        TSharedRef <SButton> FinderOrAddButton(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable);
 
 public: 
     
@@ -75,6 +79,7 @@ public:
     TArray<TSharedPtr<FMatItem>> ExactItems;
     TArray<TSharedPtr<FMatItem>> DisplayedItems;
     float thr = 4.0;
+    bool bGetSuggestions = false;
 
     /* The actual UI list */
     TSharedPtr<SListView<TSharedPtr<FMatItem>>> ListViewWidget;

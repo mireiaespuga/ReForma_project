@@ -60,34 +60,6 @@ bool FReForma_projectEditor::LoadMe() {
         return false;
     }
 
-    //UE_LOG(LogTemp, Warning, TEXT("%s"), *loadedFile); //C:/Users/Mireia Espuga/Desktop/ReForma_project/Content/
-    //FString username, right;
-    //bool result;
-    //FString dir = FPaths::ProjectContentDir();
-    //result = dir.Split(TEXT("Users/"), NULL, &right);
-    //if (result) {
-    //    result = right.Split(TEXT("/"), &username, NULL);
-    //    username = username.Replace(TEXT(" "), TEXT(""));
-    //}
-
-    //APlayerController* const PlayerController = GEngine->GetWorld()->GetFirstPlayerController();
-    
-    //IOnlineUser* OnlineSub = IOnlineUser::GetAllUserInfo(FGenericPlatformMisc::GetEpicAccountId())
-    //if (OnlineSub)
-    //{
-    //    // Get the Session Interface to clear the Delegate
-    //    IOnlineUserPtr userint = OnlineSub->GetUserInterface();
-    //    if (userint.IsValid())
-    //    {
-    //        // Clear the delegate, since we are done with this call
-
-    //    }
-    //}
-  /*  if (!result) {
-        FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(TEXT("Something went wrong with selecting user...")));
-        return "NONE";
-    }else return username.ToLower();
-    */
 }
 
 void AddAssetToDictionary(TArray< FAssetData > SelectedAssets) {
