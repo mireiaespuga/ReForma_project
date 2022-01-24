@@ -52,7 +52,6 @@ public:
     virtual int GetLastRowIndex(UDataTable* table);
     virtual TArray<UStaticMesh*> GetDatasmithGeometries(FName Path);
     virtual TArray<UMaterialInterface*> GetDatasmithMaterials(FName Path);
-    virtual TArray<UDataTable*> GetDataTables(FName Path);
     virtual void ParseString(FString text, const FString type, UEMatComparer& uemat);
     virtual void GenerateCSVwMaxMaterials(FString SavePath, TArray<UMaterialInterface*> AssetMats);
     virtual FString MaxMatToFTableMat(UMaterialInterface* maxmat, int it, FTableMaterial*& intablemat);
