@@ -43,10 +43,8 @@ class SMatTabPanel : public SCompoundWidget
         void Construct(const FArguments& InArgs);
         FReply OnChangeMat();    // because it is going to be used for a button, return type have to be FReply.
         bool CanChangeMat() const;
-        FReply OnGenerateCSV();    // because it is going to be used for a button, return type have to be FReply.
-        bool CanGenerateCSV() const;
         void SetCurrentFolderPath(const FString& Directory);
-        void SetCSVPath(const FString& Directory);
+        
         FString GetInitialPath();
         FString GetFolderPath();
         FString GetGeometriesPath();
@@ -70,10 +68,7 @@ class SMatTabPanel : public SCompoundWidget
 
 public: 
     
-    FString CSVsavePath;
     FString MaxMatsTablePath = "DataTable'/Game/Datasmith/MatComparer/MaxMats.MaxMats'";
-
-    bool isCSVPathValid = false;
 
     TArray<TSharedPtr<FMatItem>> SuggestedItems;
     TArray<TSharedPtr<FMatItem>> ExactItems;

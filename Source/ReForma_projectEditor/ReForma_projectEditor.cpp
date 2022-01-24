@@ -26,7 +26,6 @@ bool FReForma_projectEditor::CloseOpenEditors() {
     
     if (ReturnType == EAppReturnType::Ok)
     {
-        //FAssetEditorManager::Get().CloseAllAssetEditors();
         GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->CloseAllAssetEditors();
         return true;
     }
@@ -40,7 +39,7 @@ void FReForma_projectEditor::CallUpdateDB(const UDataTable* InDataTable, const F
 
 bool FReForma_projectEditor::LoadMe() {
 
-    //CONFIG FILEEEEE!!!! DEALS W/ USER TABLE PLUS PERMISSIONS!
+    //CONFIG FILE  DEALS W/ USER ] PERMISSIONS!
     FString directory = "C:/Users/mysql_unreal_userinfo.txt", loadedFile;
     TArray<FString> dataLines;
     if (FFileHelper::LoadFileToString(loadedFile, *directory)) {
@@ -124,8 +123,7 @@ TSharedRef<FExtender> OnExtendContentBrowserAssetSelectionMenu(const TArray<FAss
             {
                 UMaterialInterface* MaterialInterface = Cast< UMaterialInterface >(Asset.GetAsset()); // Need to load the asset at this point to figure out the type of the AssetImportData
 
-                if (MaterialInterface && MaterialInterface->AssetImportData)/* && MaterialInterface->AssetImportData->IsA<UDatasmithAssetImportData>()) ||
-                    FDatasmithObjectTemplateUtils::HasObjectTemplates(MaterialInterface)*/
+                if (MaterialInterface && MaterialInterface->AssetImportData)
                 {
                     bShouldExtendAssetActions = true;
                     break;

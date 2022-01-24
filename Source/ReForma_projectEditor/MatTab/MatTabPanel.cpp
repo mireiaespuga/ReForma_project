@@ -216,27 +216,6 @@ void SMatTabPanel::Construct(const FArguments& InArgs)
         ];
 }
 
-
-void SMatTabPanel::SetCSVPath(const FString& Directory) {
-    IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-    if (PlatformFile.DirectoryExists(*Directory)) {
-        SMatTabPanel::CSVsavePath = Directory;
-        SMatTabPanel::isCSVPathValid = true;
-    }else const EAppReturnType::Type Choice = FMessageDialog::Open(EAppMsgType::Ok, EAppReturnType::Cancel, FText::FromString(TEXT("Wrong Folder")));
-}
-
-FReply SMatTabPanel::OnGenerateCSV() {
-    
-    SMatTabPanel::LoadData();
-    EAppReturnType::Type ReturnType = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("(WIP) This action will reset the MaxMats table with no material matches. \n To save table changes export MaxMats table as a CSV. \n\n Do you want to continue?")));
-    if (ReturnType == EAppReturnType::Yes)
-    {
-        MatComparer.GenerateCSVwMaxMaterials(SMatTabPanel::CSVsavePath, MatComparer.AssetMats);
-    }
-
-    return FReply::Handled();
-}
-
 FReply SMatTabPanel::OnChangeMat()
 {   
     SMatTabPanel::LoadData();
@@ -245,13 +224,6 @@ FReply SMatTabPanel::OnChangeMat()
     {
         MatComparer.SwapMaterials();
     }
-
-    // Suggestions
-    //if (!UEmaterialMatch) {
-    //    MatComparer.GetUEMatSuggestions(realUEmat, MatComparer.UnrealMats);
-    //    //TODO MATCH UNREALMAT WITH REAL UNREAL MAT TO SET NEW MATERIAL
-
-    //} 
 
     return FReply::Handled();
 }
@@ -276,9 +248,6 @@ FString SMatTabPanel::GetUnrealLibraryPath() {
     return "/Game/Datasmith/MatComparer/UnrealMatsLib";
 }
 
-bool SMatTabPanel::CanGenerateCSV() const {
-    return SMatTabPanel::isSceneFolderValid() && SMatTabPanel::isCSVPathValid;
-}
 
 bool SMatTabPanel::isSceneFolderValid() const {
     return FReForma_projectEditor::Get().GetFolderName() != "NONE_folderNoValid";
@@ -425,9 +394,6 @@ FReply SMatTabPanel::FilterButtonPressed() {
     return FReply::Handled();
 }
 
-//TSharedRef<ITableRow> SMatTabPanel::OnGenerateSuggestions(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable){
-//
-//}
 
 TSharedRef <SButton> SMatTabPanel::FinderOrAddButton(TSharedPtr<FMatItem> Item, const TSharedRef<STableViewBase>& OwnerTable) {
 
@@ -604,7 +570,7 @@ TSharedRef<ITableRow> SMatTabPanel::OnGenerateRowForList(TSharedPtr<FMatItem> It
                         SMatTabPanel::FinderOrAddButton(Item, OwnerTable)
                         
                         
-                    //.ButtonStyle(this, &SItemWidget::GetItemIcon)
+                    
                     ]
                 ]
                 
