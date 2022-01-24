@@ -73,24 +73,6 @@ void FMatComparer::ParseString(FString text, const FString type, UEMatComparer& 
 
 }
 
-TArray < UDataTable*> FMatComparer::GetDataTables(FName Path) {
-    // TODO: FDataTableImporterCSV::ReadTable()
-    FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
-    TArray<FAssetData> FoundAssets;
-    FARFilter Filter;
-    //Filter.ClassNames.Add(UUserDefinedStruct::StaticClass()->GetFName());
-    Filter.ClassNames.Add(UDataTable::StaticClass()->GetFName());
-    Filter.PackagePaths.Add(Path);  //TODO: make folder name editable
-    AssetRegistryModule.Get().GetAssets(Filter, FoundAssets);
-
-    TArray<UDataTable*> DataTables;
-    for (auto Selected : FoundAssets) {
-        auto* asset = Selected.GetAsset();
-        UDataTable* test = Cast<UDataTable>(asset);
-        DataTables.Push(test);
-    }
-    return DataTables;
-}
 
 void FMatComparer::initDB() {
 
@@ -151,19 +133,6 @@ TArray<UEMatComparer*> FMatComparer::GetUEMaterials(const FString type, bool bCa
     return UEMats;
 }
 
-//bool MaterialComparer(UMaterial& mat1, UMaterial& mat2) {
-//
-//    //UTexture* tex1, * tex2;
-//    TArray<UTexture*> T1, T2;
-//    bool areEqual = false;
-//
-//    mat1.GetUsedTextures(T1, EMaterialQualityLevel::High, true, ERHIFeatureLevel::SM5, true);
-//    mat2.GetUsedTextures(T2, EMaterialQualityLevel::High, true, ERHIFeatureLevel::SM5, true);
-//
-//    //FTexture2DMipMap* MyMipMap = &MyTexture2D->PlatformData->Mips[0];
-//    //https://answers.unrealengine.com/questions/25594/accessing-pixel-values-of-texture2d.html
-//    
-//}
 
 bool FMatComparer::MatNameCheck(UMaterialInterface& realuemat, UEMatComparer& maxmat) {
     return realuemat.GetFName() == maxmat.MaterialName;
@@ -179,16 +148,16 @@ UEMatComparer* FMatComparer::GetUeMatMatch(UMaterialInterface* realMaxmat, TArra
         UEMatComparer* match = matches.Pop();
         // check exact paramaters match
         float m1match = FMatComparer::TextureCheck(*realMaxmat, *match, true);
-        if (!FMatComparer::TextureCheck(*realMaxmat, *match, true)) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Purple, match->MaterialName.ToString() + "  -->  " + TEXT("tex"));
+        //if (!FMatComparer::TextureCheck(*realMaxmat, *match, true)) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Purple, match->MaterialName.ToString() + "  -->  " + TEXT("tex"));
 
         m1match += FMatComparer::FatherCheck(*realMaxmat, *match);
-        if (!FMatComparer::FatherCheck(*realMaxmat, *match)) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Purple, match->MaterialName.ToString() + "  -->  " + TEXT("father"));
+        //if (!FMatComparer::FatherCheck(*realMaxmat, *match)) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Purple, match->MaterialName.ToString() + "  -->  " + TEXT("father"));
 
         m1match += FMatComparer::ScalarParamsCheck(*realMaxmat, *match, 1.0, true);
-        if (!FMatComparer::ScalarParamsCheck(*realMaxmat, *match, 1.0, true)) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Purple, match->MaterialName.ToString() + "  -->  " + TEXT("sca"));
+        //if (!FMatComparer::ScalarParamsCheck(*realMaxmat, *match, 1.0, true)) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Purple, match->MaterialName.ToString() + "  -->  " + TEXT("sca"));
 
         m1match += FMatComparer::VectorParamsCheck(*realMaxmat, *match, 1.0, true);
-        if (!FMatComparer::VectorParamsCheck(*realMaxmat, *match, 1.0, true)) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Purple, match->MaterialName.ToString() + "  -->  " + TEXT("vec"));
+        //if (!FMatComparer::VectorParamsCheck(*realMaxmat, *match, 1.0, true)) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Purple, match->MaterialName.ToString() + "  -->  " + TEXT("vec"));
 
         if (m1match == 4.0) return match; 
     } 
